@@ -1,51 +1,66 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
 
-class CurrentVideoWidget extends StatelessWidget {
+import 'package:englishkey/presentation/providers/lessons_provider.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+class CurrentVideoWidget extends ConsumerWidget {
   const CurrentVideoWidget({super.key});
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lessonState = ref.watch(lessonsProvider);
     return Container(
       width: double.infinity,
       height: 271.5,
       color: Colors.transparent,
-      child: Stack(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Image.asset('assets/images/video_image.png'),
-          ),
-          Positioned(
-            bottom: 20,
-            left: 10,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black26,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
+      child:
+          lessonState.lastPlayed.isNotEmpty
+              ? Stack(
                 children: [
-                  IconButton(
-                    onPressed: () {},
-                    icon: Icon(
-                      Icons.play_circle_outline,
-                      size: 40,
-                      color: Colors.white,
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.file(
+                      File(lessonState.lastPlayed.first.thumbnail),
                     ),
                   ),
-                  Text(
-                    'Que me falto',
-                    style: TextStyle(
-                      fontSize:
-                          Theme.of(context).textTheme.titleLarge!.fontSize,
-                      color: Colors.white,
+                  Positioned(
+                    bottom: 20,
+                    left: 10,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black26,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: () {},
+                            icon: Icon(
+                              Icons.play_circle_outline,
+                              size: 30,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            lessonState.lastPlayed.first.videoPath
+                                .split('/')
+                                .last
+                                .split('.')[1],
+                            style: TextStyle(
+                              fontSize:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.titleSmall!.fontSize,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
-              ),
-            ),
-          ),
-        ],
-      ),
+              )
+              : Center(child: Text('Empieze Reproduciendo un video')),
     );
   }
 }

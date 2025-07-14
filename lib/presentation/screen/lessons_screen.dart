@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:englishkey/config/permission/permission_config.dart';
 import 'package:englishkey/presentation/providers/lessons_provider.dart';
 import 'package:englishkey/presentation/widget/lessons/current_video_widget.dart';
@@ -60,7 +62,7 @@ class LessonsScreen extends ConsumerWidget {
             CurrentVideoWidget(),
             SizedBox(height: 20),
             Text(
-              'Top Videos',
+              'Ultimos Videos Vistos',
               style: TextStyle(
                 fontSize: Theme.of(context).textTheme.titleMedium!.fontSize,
                 fontWeight: FontWeight.w600,
@@ -69,19 +71,44 @@ class LessonsScreen extends ConsumerWidget {
             SizedBox(height: 10),
             SizedBox(
               height: 150,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: 4,
-                itemBuilder: (context, index) {
-                  return Container(
-                    margin: EdgeInsets.all(5),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.asset('assets/images/video_image.png'),
-                    ),
-                  );
-                },
-              ),
+              child:
+                  lessonState.lastPlayed.isNotEmpty
+                      ? ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: lessonState.lastPlayed.length,
+                        itemBuilder: (context, index) {
+                          final topVideo = lessonState.lastPlayed[index];
+                          return Container(
+                            margin: EdgeInsets.all(5),
+                            child: Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Image.file(File(topVideo.thumbnail)),
+                                ),
+                                Positioned(
+                                  bottom: 10,
+                                  left: 2,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withAlpha(20),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      topVideo.videoPath
+                                          .split('/')
+                                          .last
+                                          .split('.')[1],
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      )
+                      : Center(child: Text('Empieze a reproducir')),
             ),
 
             lessonState.files.isEmpty

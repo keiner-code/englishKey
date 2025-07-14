@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:englishkey/presentation/providers/lessons_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,10 +13,21 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
   ConsumerState<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
 }
 
+class Subtitle {
+  final Duration start;
+  final Duration end;
+  final String text;
+
+  Subtitle({required this.start, required this.end, required this.text});
+}
+
 class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   VideoPlayerController? _controller;
   bool _showControls = true;
   Timer? _hideControlsTimer;
+  Timer? _subtitleTimer;
+  List<Subtitle> _subtitles = [];
+  Subtitle? _currentSubtitle;
 
   @override
   void initState() {
@@ -31,8 +43,86 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           setState(() {});
           _controller!.play();
           _startHideControlsTimer();
+          _startSubtitleLoop();
         });
+
+      final subtitlePath =
+          ref.read(lessonsProvider).subtitles.first.values.first;
+      _loadSubtitles(subtitlePath);
     }
+  }
+
+  Future<void> _loadSubtitles(File file) async {
+    final content = await file.readAsString();
+    setState(() {
+      _subtitles = _parseSrt(content);
+      _currentSubtitle = null; // Reiniciar subtítulo actual
+    });
+  }
+
+  List<Subtitle> _parseSrt(String content) {
+    final lines = content.split('\n');
+    final subtitles = <Subtitle>[];
+    int index = 0;
+
+    while (index < lines.length) {
+      if (lines[index].trim().isEmpty) {
+        index++;
+        continue;
+      }
+      index++;
+      if (index >= lines.length) break;
+
+      final times = lines[index].split(' --> ');
+      final start = _parseDuration(times[0]);
+      final end = _parseDuration(times[1]);
+      index++;
+
+      final buffer = StringBuffer();
+      while (index < lines.length && lines[index].trim().isNotEmpty) {
+        buffer.writeln(lines[index]);
+        index++;
+      }
+
+      subtitles.add(
+        Subtitle(start: start, end: end, text: buffer.toString().trim()),
+      );
+      index++;
+    }
+
+    return subtitles;
+  }
+
+  Duration _parseDuration(String time) {
+    final parts = time.trim().split(RegExp(r'[:,]'));
+    return Duration(
+      hours: int.parse(parts[0]),
+      minutes: int.parse(parts[1]),
+      seconds: int.parse(parts[2]),
+      milliseconds: int.parse(parts[3]),
+    );
+  }
+
+  void _startSubtitleLoop() {
+    _subtitleTimer = Timer.periodic(const Duration(milliseconds: 200), (_) {
+      final position = _controller!.value.position;
+      final current = _getCurrentSubtitle(position);
+
+      if (current?.text != _currentSubtitle?.text) {
+        setState(() {
+          _currentSubtitle = current;
+        });
+      }
+    });
+  }
+
+  Subtitle? _getCurrentSubtitle(Duration position) {
+    for (final sub in _subtitles) {
+      if (position >= sub.start && position <= sub.end) {
+        return sub;
+      }
+    }
+    return null;
   }
 
   void _startHideControlsTimer() {
@@ -71,11 +161,23 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _controller?.dispose();
     _hideControlsTimer?.cancel();
+    _subtitleTimer?.cancel();
     super.dispose();
+  }
+
+  List<PopupMenuItem<String>> subtitleList(List<Map<String, File>> subtitles) {
+    return subtitles.map((item) {
+      return PopupMenuItem<String>(
+        height: 25,
+        value: item.values.first.path,
+        child: Text(item.keys.first),
+      );
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    final lessonState = ref.watch(lessonsProvider);
     return Scaffold(
       backgroundColor: Colors.black,
       body:
@@ -94,8 +196,43 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                         ),
                       ),
                     ),
+                    Positioned(
+                      bottom: 60,
+                      left: 16,
+                      right: 16,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Text(
+                            _currentSubtitle?.text ?? '',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.titleLarge!.fontSize,
+                              foreground:
+                                  Paint()
+                                    ..style = PaintingStyle.stroke
+                                    ..strokeWidth = 3
+                                    ..color = Colors.black,
+                            ),
+                          ),
+                          Text(
+                            _currentSubtitle?.text ?? '',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.titleLarge!.fontSize,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     if (_showControls) ...[
-                      // Botón de volver
                       Positioned(
                         top: 40,
                         left: 16,
@@ -113,8 +250,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                           },
                         ),
                       ),
-
-                      // Controles inferiores
                       Positioned(
                         bottom: 40,
                         left: 0,
@@ -183,6 +318,31 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                           ],
                         ),
                       ),
+                      lessonState.subtitleFiles != null
+                          ? Positioned(
+                            top: 15,
+                            right: 15,
+                            child: PopupMenuButton<String>(
+                              icon: const Icon(
+                                Icons.subtitles,
+                                color: Colors.white,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 8,
+                              offset: const Offset(0, 40),
+                              onSelected: (String subtitlePath) async {
+                                await _loadSubtitles(File(subtitlePath));
+                              },
+                              itemBuilder:
+                                  (BuildContext context) =>
+                                      <PopupMenuEntry<String>>[
+                                        ...subtitleList(lessonState.subtitles),
+                                      ],
+                            ),
+                          )
+                          : const SizedBox(),
                     ],
                   ],
                 ),
