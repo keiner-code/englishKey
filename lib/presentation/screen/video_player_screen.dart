@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:englishkey/presentation/providers/lessons_provider.dart';
+import 'package:englishkey/presentation/widget/lessons/slider_list_video_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,15 +29,21 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   Timer? _subtitleTimer;
   List<Subtitle> _subtitles = [];
   Subtitle? _currentSubtitle;
+  bool _showSlider = false;
+  bool _isEndVideo = false;
+  bool _isFirstVideo = false;
 
   @override
   void initState() {
     super.initState();
-
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-
     final videoFile = ref.read(lessonsProvider).videoSelected;
+    initializeVideoPlayer(videoFile);
+    validatePositionNextVideoToList();
+    validatePositionPrevsVideoToList();
+  }
 
+  void initializeVideoPlayer(File? videoFile) {
     if (videoFile != null && videoFile.existsSync()) {
       _controller = VideoPlayerController.file(videoFile)
         ..initialize().then((_) {
@@ -46,18 +53,115 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           _startSubtitleLoop();
         });
 
-      final subtitlePath =
-          ref.read(lessonsProvider).subtitles.first.values.first;
-      _loadSubtitles(subtitlePath);
+      _controller!.addListener(_videoListener);
+
+      final subtitlePath = ref.read(lessonsProvider).subtitles;
+      if (subtitlePath.isNotEmpty) {
+        _loadSubtitles(subtitlePath.first.values.first);
+      }
     }
+  }
+
+  void _videoListener() {
+    if (_controller == null || !_controller!.value.isInitialized) return;
+
+    final isEndVideo =
+        _controller!.value.position >= _controller!.value.duration;
+
+    if (isEndVideo && !_controller!.value.isPlaying) {
+      _controller!.removeListener(_videoListener);
+      if (!_isEndVideo) {
+        _playNextVideo();
+      }
+    }
+  }
+
+  void validatePositionPrevsVideoToList() {
+    final state = ref.read(lessonsProvider);
+
+    final currentIndex = state.listVideoToDirectory.indexOf(
+      state.videoSelected!,
+    );
+    setState(() {
+      _isFirstVideo = currentIndex <= 0;
+    });
+  }
+
+  void validatePositionNextVideoToList() {
+    final state = ref.read(lessonsProvider);
+
+    final currentIndex = state.listVideoToDirectory.indexOf(
+      state.videoSelected!,
+    );
+    setState(() {
+      _isEndVideo = currentIndex >= state.listVideoToDirectory.length - 1;
+    });
+  }
+
+  void _playPrevsVideo() {
+    final lessons = ref.read(lessonsProvider.notifier);
+    final state = ref.read(lessonsProvider);
+
+    final currentIndex = state.listVideoToDirectory.indexOf(
+      state.videoSelected!,
+    );
+    final nextIndex = currentIndex - 1;
+
+    if (nextIndex < 0) return;
+
+    final nextVideo = state.listVideoToDirectory[nextIndex];
+    lessons.addVideoSelected(nextVideo);
+
+    _controller?.dispose();
+
+    initializeVideoPlayer(nextVideo);
+    validatePositionPrevsVideoToList();
+    validatePositionNextVideoToList();
+  }
+
+  void _playNextVideo() {
+    final lessons = ref.read(lessonsProvider.notifier);
+    final state = ref.read(lessonsProvider);
+
+    final currentIndex = state.listVideoToDirectory.indexOf(
+      state.videoSelected!,
+    );
+    final nextIndex = currentIndex + 1;
+
+    if (nextIndex >= state.listVideoToDirectory.length) return;
+
+    final nextVideo = state.listVideoToDirectory[nextIndex];
+    lessons.addVideoSelected(nextVideo);
+
+    _controller?.dispose();
+
+    initializeVideoPlayer(nextVideo);
+    validatePositionNextVideoToList();
+    validatePositionPrevsVideoToList();
   }
 
   Future<void> _loadSubtitles(File file) async {
     final content = await file.readAsString();
+
+    //Reiniciar el loop
+    _subtitleTimer?.cancel();
+
+    final newSubtitle = _parseSrt(content);
+
     setState(() {
-      _subtitles = _parseSrt(content);
-      _currentSubtitle = null; // Reiniciar subtítulo actual
+      _subtitles = newSubtitle;
+      _currentSubtitle = null;
     });
+
+    //Forzar una actualizacion despues de cargar el subtitulo
+    final position = _controller?.value.position ?? Duration.zero;
+    final current = _getCurrentSubtitle(position);
+    if (current?.text != _currentSubtitle?.text) {
+      setState(() {
+        _currentSubtitle = current;
+      });
+    }
+    _startSubtitleLoop();
   }
 
   List<Subtitle> _parseSrt(String content) {
@@ -104,7 +208,10 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   }
 
   void _startSubtitleLoop() {
+    _subtitleTimer?.cancel();
     _subtitleTimer = Timer.periodic(const Duration(milliseconds: 200), (_) {
+      if (_controller == null || !_controller!.value.isInitialized) return;
+
       final position = _controller!.value.position;
       final current = _getCurrentSubtitle(position);
 
@@ -156,15 +263,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     _controller!.seekTo(safePosition);
   }
 
-  @override
-  void dispose() {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    _controller?.dispose();
-    _hideControlsTimer?.cancel();
-    _subtitleTimer?.cancel();
-    super.dispose();
-  }
-
   List<PopupMenuItem<String>> subtitleList(List<Map<String, File>> subtitles) {
     return subtitles.map((item) {
       return PopupMenuItem<String>(
@@ -176,8 +274,19 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   }
 
   @override
+  void dispose() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    _controller?.removeListener(_videoListener);
+    _controller?.dispose();
+    _hideControlsTimer?.cancel();
+    _subtitleTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final lessonState = ref.watch(lessonsProvider);
+    final screen = MediaQuery.of(context).size;
     return Scaffold(
       backgroundColor: Colors.black,
       body:
@@ -254,68 +363,97 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                         bottom: 40,
                         left: 0,
                         right: 0,
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.brown.withAlpha(200),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(220),
+                                offset: Offset(0, 4),
+                                blurRadius: 8,
                               ),
-                              child: VideoProgressIndicator(
-                                _controller!,
-                                allowScrubbing: true,
-                                colors: VideoProgressColors(
-                                  playedColor: Colors.red,
-                                  backgroundColor: Colors.grey,
-                                  bufferedColor: Colors.white38,
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: VideoProgressIndicator(
+                                  _controller!,
+                                  allowScrubbing: true,
+                                  colors: VideoProgressColors(
+                                    playedColor: Colors.red,
+                                    backgroundColor: Colors.grey,
+                                    bufferedColor: Colors.white38,
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.replay_10,
-                                    size: 36,
-                                    color: Colors.white,
+                              const SizedBox(height: 16),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  IconButton(
+                                    onPressed:
+                                        _isFirstVideo
+                                            ? null
+                                            : _playPrevsVideo, //TODO
+                                    icon: Icon(Icons.skip_previous, size: 40),
                                   ),
-                                  onPressed:
-                                      () =>
-                                          _seekBy(const Duration(seconds: -10)),
-                                ),
-                                const SizedBox(width: 20),
-                                IconButton(
-                                  icon: Icon(
-                                    _controller!.value.isPlaying
-                                        ? Icons.pause_circle_filled
-                                        : Icons.play_circle_filled,
-                                    size: 48,
-                                    color: Colors.white,
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.replay_10,
+                                      size: 36,
+                                      color: Colors.white,
+                                    ),
+                                    onPressed:
+                                        () => _seekBy(
+                                          const Duration(seconds: -10),
+                                        ),
                                   ),
-                                  onPressed: () {
-                                    setState(() {
+                                  const SizedBox(width: 20),
+                                  IconButton(
+                                    icon: Icon(
                                       _controller!.value.isPlaying
-                                          ? _controller!.pause()
-                                          : _controller!.play();
-                                    });
-                                    _startHideControlsTimer();
-                                  },
-                                ),
-                                const SizedBox(width: 20),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.forward_10,
-                                    size: 36,
-                                    color: Colors.white,
+                                          ? Icons.pause_circle_filled
+                                          : Icons.play_circle_filled,
+                                      size: 48,
+                                      color: Colors.white,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _controller!.value.isPlaying
+                                            ? _controller!.pause()
+                                            : _controller!.play();
+                                      });
+                                      _startHideControlsTimer();
+                                    },
                                   ),
-                                  onPressed:
-                                      () =>
-                                          _seekBy(const Duration(seconds: 10)),
-                                ),
-                              ],
-                            ),
-                          ],
+                                  const SizedBox(width: 20),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.forward_10,
+                                      size: 36,
+                                      color: Colors.white,
+                                    ),
+                                    onPressed:
+                                        () => _seekBy(
+                                          const Duration(seconds: 10),
+                                        ),
+                                  ),
+                                  IconButton(
+                                    onPressed:
+                                        _isEndVideo ? null : _playNextVideo,
+                                    icon: Icon(Icons.skip_next, size: 40),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       lessonState.subtitleFiles != null
@@ -343,6 +481,62 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                             ),
                           )
                           : const SizedBox(),
+                      Positioned(
+                        right: 0,
+                        top: screen.height / 3,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.brown.withAlpha(200),
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(12),
+                              bottomLeft: Radius.circular(12),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(70),
+                                offset: const Offset(-2, 2),
+                                blurRadius: 6,
+                              ),
+                            ],
+                          ),
+                          child:
+                              _showSlider
+                                  ? SizedBox()
+                                  : IconButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _showSlider = true;
+                                      });
+                                    },
+                                    icon: Icon(
+                                      Icons.arrow_back_ios,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                        ),
+                      ),
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                        top: 0,
+                        bottom: 0,
+                        right: _showSlider ? 0 : -screen.width * 0.4,
+                        child: GestureDetector(
+                          onDoubleTap: () {
+                            setState(() {
+                              _showSlider = false;
+                            });
+                          },
+                          onHorizontalDragEnd: (details) {
+                            if (details.velocity.pixelsPerSecond.dx > 300) {
+                              setState(() {
+                                _showSlider = false;
+                              });
+                            }
+                          },
+                          child: SliderListVideoWidget(),
+                        ),
+                      ),
                     ],
                   ],
                 ),

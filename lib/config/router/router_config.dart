@@ -2,6 +2,7 @@ import 'package:englishkey/presentation/screen/home_screen.dart';
 import 'package:englishkey/presentation/screen/lessons_screen.dart';
 import 'package:englishkey/presentation/screen/settings_screen.dart';
 import 'package:englishkey/presentation/screen/video_player_screen.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 
 final GoRouter appRouterConfig = GoRouter(
@@ -11,7 +12,10 @@ final GoRouter appRouterConfig = GoRouter(
     GoRoute(path: '/lessons', builder: (context, state) => LessonsScreen()),
     GoRoute(
       path: '/video_player',
-      builder: (context, state) => VideoPlayerScreen(),
+      builder: (context, state) {
+        final keyString = state.extra as String?;
+        return VideoPlayerScreen(key: ValueKey(keyString ?? 'default'));
+      },
     ),
   ],
 );

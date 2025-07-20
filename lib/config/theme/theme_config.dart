@@ -34,5 +34,7 @@ class AppThemeData {
     buttonTheme: ButtonThemeData(
       colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
     ),
+    iconTheme: IconThemeData(color: isDarkMode ? Colors.white : Colors.black),
+    disabledColor: Colors.grey,
   );
 }

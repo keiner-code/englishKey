@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:englishkey/config/permission/permission_config.dart';
+import 'package:englishkey/domain/entities/last_player.dart';
 import 'package:englishkey/presentation/providers/lessons_provider.dart';
 import 'package:englishkey/presentation/widget/lessons/current_video_widget.dart';
 import 'package:englishkey/presentation/widget/lessons/list_tile_folder_widget.dart';
@@ -9,6 +10,7 @@ import 'package:englishkey/presentation/widget/lessons/selected_file_widget.dart
 import 'package:englishkey/presentation/widget/shared/custom_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class LessonsScreen extends ConsumerWidget {
   const LessonsScreen({super.key});
@@ -28,7 +30,7 @@ class LessonsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Lessiones',
+          'Leciones',
           style: TextStyle(fontSize: textTheme!.fontSize),
         ),
       ),
@@ -78,40 +80,16 @@ class LessonsScreen extends ConsumerWidget {
                         itemCount: lessonState.lastPlayed.length,
                         itemBuilder: (context, index) {
                           final topVideo = lessonState.lastPlayed[index];
-                          return Container(
-                            margin: EdgeInsets.all(5),
-                            child: Stack(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: Image.file(File(topVideo.thumbnail)),
-                                ),
-                                Positioned(
-                                  bottom: 10,
-                                  left: 2,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withAlpha(20),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      topVideo.videoPath
-                                          .split('/')
-                                          .last
-                                          .split('.')[1],
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                          return CardVideoLessonWidget(
+                            topVideo: topVideo,
+                            ref: ref,
                           );
                         },
                       )
                       : Center(child: Text('Empieze a reproducir')),
             ),
 
-            lessonState.files.isEmpty
+            lessonState.listVideoToDirectory.isEmpty
                 ? ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text(
@@ -148,11 +126,11 @@ class LessonsScreen extends ConsumerWidget {
                 ? SelectedFileWidget(selectFolder: selectFolder)
                 : Column(
                   children:
-                      lessonState.files.isEmpty
+                      lessonState.listVideoToDirectory.isEmpty
                           ? lessonState.directories.map((directory) {
                             return ListTileFolderWidget(directory: directory);
                           }).toList()
-                          : lessonState.files.map((video) {
+                          : lessonState.listVideoToDirectory.map((video) {
                             return ListTileVideoWidget(video: video);
                           }).toList(),
                 ),
@@ -160,6 +138,54 @@ class LessonsScreen extends ConsumerWidget {
         ),
       ),
       drawer: CustomDrawer(),
+    );
+  }
+}
+
+class CardVideoLessonWidget extends StatelessWidget {
+  const CardVideoLessonWidget({
+    super.key,
+    required this.topVideo,
+    required this.ref,
+  });
+
+  final LastPlayer topVideo;
+  final WidgetRef ref;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        ref
+            .read(lessonsProvider.notifier)
+            .showVideoState(File(topVideo.videoPath));
+        context.push('/video_player');
+      },
+      child: Container(
+        margin: EdgeInsets.all(5),
+        child: Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.file(File(topVideo.thumbnail)),
+            ),
+            Positioned(
+              bottom: 10,
+              left: 2,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withAlpha(20),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  topVideo.videoPath.split('/').last.split('.')[1],
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

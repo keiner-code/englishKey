@@ -4,47 +4,63 @@ import 'package:englishkey/presentation/providers/lessons_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:video_player/video_player.dart';
 
 class ListTileVideoWidget extends ConsumerWidget {
-  const ListTileVideoWidget({super.key, required this.video});
+  const ListTileVideoWidget({
+    super.key,
+    required this.video,
+    this.showSubtitle = true,
+  });
   final File video;
-
-  Future<Duration?> getVideoDuration(String path) async {
-    final controller = VideoPlayerController.file(File(path));
-    await controller.initialize();
-    final duration = controller.value.duration;
-    await controller.dispose();
-    return duration;
-  }
+  final bool showSubtitle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ListTile(
       onTap: () {
+        final currentLocation = GoRouterState.of(context).uri.toString();
         ref.read(lessonsProvider.notifier).addVideoSelected(video);
-        context.push('/video_player');
+        final videoId = DateTime.now().millisecondsSinceEpoch.toString();
+
+        if (currentLocation == '/video_player') {
+          context.replace('/video_player', extra: videoId);
+          return;
+        }
+        context.push('/video_player', extra: videoId);
       },
       contentPadding: EdgeInsets.zero,
       leading: SizedBox(
         child: ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: Image.asset(
-            'assets/images/video_image.png',
-            fit: BoxFit.fitHeight,
+          child: FutureBuilder(
+            future: ref
+                .read(lessonsProvider.notifier)
+                .generateThumbnail(video.path),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return CircularProgressIndicator();
+              }
+              return Image.file(File(snapshot.data!), fit: BoxFit.fitHeight);
+            },
           ),
         ),
       ),
       title: Text(
         video.path.split('/').last,
         style: TextStyle(
-          fontSize: Theme.of(context).textTheme.titleSmall!.fontSize,
+          fontSize:
+              showSubtitle
+                  ? Theme.of(context).textTheme.titleSmall!.fontSize
+                  : 12,
           fontWeight: FontWeight.w500,
         ),
       ),
-      subtitle: Text(video.path.split('/')[video.path.split('/').length - 2]),
+      subtitle:
+          showSubtitle
+              ? Text(video.path.split('/')[video.path.split('/').length - 2])
+              : SizedBox(),
       trailing: FutureBuilder<Duration?>(
-        future: getVideoDuration(video.path),
+        future: ref.read(lessonsProvider.notifier).getVideoDuration(video.path),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return SizedBox(
@@ -55,6 +71,7 @@ class ListTileVideoWidget extends ConsumerWidget {
           }
           if (snapshot.hasData && snapshot.data != null) {
             final duration = snapshot.data!;
+            final hours = duration.inHours;
             final minutes = duration.inMinutes
                 .remainder(60)
                 .toString()
@@ -63,11 +80,21 @@ class ListTileVideoWidget extends ConsumerWidget {
                 .remainder(60)
                 .toString()
                 .padLeft(2, '0');
-            return Text('$minutes:$seconds', style: TextStyle(fontSize: 14));
+
+            final formatted =
+                hours > 0
+                    ? '${hours.toString().padLeft(2, '0')}:$minutes:$seconds'
+                    : '$minutes:$seconds';
+
+            return Text(formatted, style: TextStyle(fontSize: 14));
           }
           return Text('--:--', style: TextStyle(fontSize: 14));
         },
       ),
+      selected:
+          ref.read(lessonsProvider).videoSelected != null
+              ? video.path == ref.read(lessonsProvider).videoSelected!.path
+              : false,
     );
   }
 }

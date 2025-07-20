@@ -14,7 +14,7 @@ class ListTileFolderWidget extends ConsumerWidget {
       leading: Icon(
         Icons.folder,
         size: 40,
-        color: Theme.of(context).primaryColor,
+        color: Theme.of(context).colorScheme.primary,
       ),
       title: Text(directory.path.split('/').last),
       onTap: () {

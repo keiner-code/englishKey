@@ -6,13 +6,14 @@ import 'package:englishkey/infraestructure/datasources/video_player_datasource_i
 import 'package:englishkey/infraestructure/repositories/video_player_repository_impl.dart';
 import 'package:filesystem_picker/filesystem_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
 class LessonsState {
-  final List<File> files;
+  final List<File> listVideoToDirectory;
   final List<Directory> directories;
   final String errorMessage;
   final File? videoSelected;
@@ -21,7 +22,7 @@ class LessonsState {
   final List<LastPlayer> lastPlayed;
 
   const LessonsState({
-    required this.files,
+    required this.listVideoToDirectory,
     this.errorMessage = '',
     required this.directories,
     this.videoSelected,
@@ -31,7 +32,7 @@ class LessonsState {
   });
 
   LessonsState copyWith({
-    List<File>? files,
+    List<File>? listVideoToDirectory,
     String? errorMessage,
     List<Directory>? directories,
     File? videoSelected,
@@ -40,7 +41,7 @@ class LessonsState {
     List<Map<String, File>>? subtitles,
     List<LastPlayer>? lastPlayed,
   }) => LessonsState(
-    files: files ?? this.files,
+    listVideoToDirectory: listVideoToDirectory ?? this.listVideoToDirectory,
     errorMessage: errorMessage ?? this.errorMessage,
     directories: directories ?? this.directories,
     videoSelected: videoSelected ?? this.videoSelected,
@@ -53,9 +54,7 @@ class LessonsState {
 class LessonsNotifier extends StateNotifier<LessonsState> {
   VideoPlayerRepositoryImpl repository;
   LessonsNotifier({required this.repository})
-    : super(LessonsState(files: [], directories: []));
-  //final Logger _logger = Logger();
-  final cache = DefaultCacheManager();
+    : super(LessonsState(listVideoToDirectory: [], directories: []));
 
   void getAllDirectories() async {
     final response = await repository.listDirectories();
@@ -72,7 +71,45 @@ class LessonsNotifier extends StateNotifier<LessonsState> {
     state = state.copyWith(lastPlayed: response.reversed.toList());
   }
 
+  Future<Duration?> getVideoDuration(String path) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'duration_$path';
+
+    final currentduration = prefs.getString(key);
+
+    if (currentduration != null && currentduration.isNotEmpty) {
+      final parts = currentduration.split(':');
+      if (parts.length != 3) throw FormatException('Formato no válido');
+      final secParts = parts[2].split('.');
+      return Duration(
+        hours: int.parse(parts[0]),
+        minutes: int.parse(parts[1]),
+        seconds: int.parse(secParts[0]),
+        microseconds:
+            secParts.length > 1 ? int.parse(secParts[1].padRight(6, '0')) : 0,
+      );
+    }
+
+    final controller = VideoPlayerController.file(File(path));
+    await controller.initialize();
+    final duration = controller.value.duration;
+    await controller.dispose();
+
+    await prefs.setString(key, duration.toString());
+
+    return duration;
+  }
+
   Future<String> generateThumbnail(String path) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'thumbnail_$path';
+
+    final cached = prefs.getString(key);
+
+    if (cached != null && File(cached).existsSync()) {
+      return cached;
+    }
+
     final thumbnailPath = await VideoThumbnail.thumbnailFile(
       video: path,
       thumbnailPath: (await getTemporaryDirectory()).path,
@@ -82,17 +119,36 @@ class LessonsNotifier extends StateNotifier<LessonsState> {
     );
 
     if (thumbnailPath == null) return '';
+    await prefs.setString(key, thumbnailPath);
     return thumbnailPath;
   }
 
-  Future<Map<String, File>> isCacheImageThumbnail(String videoPath) async {
-    final cacheKey = 'thumb_${videoPath.hashCode}';
+  bool isTheVideoSavedLocally(String path) {
+    final videoExist = state.lastPlayed.firstWhere(
+      (item) => item.videoPath == path,
+    );
 
-    final cacheFile = await cache.getFileFromCache(cacheKey);
-    if (cacheFile != null && await cacheFile.file.exists()) {
-      return {cacheKey: cacheFile.file};
+    if (videoExist.videoPath.isEmpty) return false;
+
+    final index = state.lastPlayed.indexWhere(
+      (lasplayer) => lasplayer.videoPath == path,
+    );
+    final listVideo = state.lastPlayed;
+    final temp = listVideo[index];
+    listVideo[index] = state.lastPlayed.first;
+    listVideo.first = temp;
+    state = state.copyWith(lastPlayed: listVideo);
+    return true;
+  }
+
+  void showVideoState(File video) {
+    state = state.copyWith(videoSelected: video);
+    final directory = video.parent;
+    readVideoToFolder(directory);
+
+    if (state.subtitleFiles != null) {
+      loadSubtitleList(video);
     }
-    return {};
   }
 
   void addVideoSelected(File video) async {
@@ -104,17 +160,13 @@ class LessonsNotifier extends StateNotifier<LessonsState> {
       loadSubtitleList(video);
     }
 
-    final saveVideoLength = state.lastPlayed.length;
+    //generar thumbnail
+    final thumbnailPath = await generateThumbnail(video.path);
 
-    if (saveVideoLength < 7) {
-      //generar thumbnail
-      final thumbnailPath = await generateThumbnail(video.path);
+    //Validate video
+    if (isTheVideoSavedLocally(video.path)) return;
 
-      if (thumbnailPath.isEmpty) {
-        //Cargar una imagen local que no se pudo generar la thumbnail
-        return;
-      }
-
+    if (state.lastPlayed.length < 7) {
       //add to local
       final newVideo = await repository.addVideoOrUpdate(
         video: LastPlayer(videoPath: video.path, thumbnail: thumbnailPath),
@@ -123,9 +175,28 @@ class LessonsNotifier extends StateNotifier<LessonsState> {
       state = state.copyWith(
         lastPlayed: [...state.lastPlayed, newVideo].reversed.toList(),
       );
-
-      //Eliminar el primero agregado y insertar el ultimo
+      return;
     }
+    //Controlar los duplicados y posicionarlos
+    if (await deleteVideo()) {
+      final newVideo = await repository.addVideoOrUpdate(
+        video: LastPlayer(videoPath: video.path, thumbnail: thumbnailPath),
+      );
+
+      state = state.copyWith(
+        lastPlayed: [...state.lastPlayed, newVideo].reversed.toList(),
+      );
+    }
+  }
+
+  Future<bool> deleteVideo() async {
+    final firstid = state.lastPlayed.first.id;
+    final isDelete = await repository.removeVideo(id: firstid.toString());
+    state = state.copyWith(
+      lastPlayed:
+          state.lastPlayed.where((video) => video.id != firstid).toList(),
+    );
+    return isDelete;
   }
 
   void loadSubtitleList(File video) {
@@ -177,7 +248,7 @@ class LessonsNotifier extends StateNotifier<LessonsState> {
   }
 
   void removeFiles() {
-    state = state.copyWith(files: []);
+    state = state.copyWith(listVideoToDirectory: []);
   }
 
   void readVideoToFolder(Directory directory) {
@@ -197,7 +268,7 @@ class LessonsNotifier extends StateNotifier<LessonsState> {
       state = state.copyWith(errorMessage: 'No se encontraron videos');
       return;
     }
-    state = state.copyWith(files: videoFiles, errorMessage: '');
+    state = state.copyWith(listVideoToDirectory: videoFiles, errorMessage: '');
     loadDirectorySubtitles(directory);
   }
 
