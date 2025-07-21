@@ -1,3 +1,7 @@
+import 'package:englishkey/core/constants/cache_policy.dart';
+import 'package:englishkey/core/constants/privacy_policy.dart';
+import 'package:englishkey/core/constants/terms_and_conditions.dart';
+import 'package:englishkey/domain/entities/settings.dart';
 import 'package:englishkey/presentation/providers/settings_provider.dart';
 import 'package:englishkey/presentation/widget/shared/custom_drawer.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +12,7 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    //final settingState = ref.watch(settingProvider);
     final sizeTitle = Theme.of(context).textTheme.titleSmall;
     return Scaffold(
       appBar: AppBar(
@@ -76,9 +81,20 @@ class SettingsScreen extends ConsumerWidget {
             trailing: Transform.scale(
               scale: 0.9,
               child: Switch(
-                value: ref.watch(isDarkModeProvider),
+                value: ref.watch(settingProvider).settings!.darkMode,
                 onChanged: (value) {
-                  ref.read(isDarkModeProvider.notifier).state = value;
+                  final settingState = ref.read(settingProvider).settings;
+                  ref
+                      .read(settingProvider.notifier)
+                      .addOrUpdateSetting(
+                        Settings(
+                          id: settingState!.id,
+                          notifications: settingState.notifications,
+                          darkMode: value,
+                          sharedApp: settingState.sharedApp,
+                          contact: settingState.contact,
+                        ),
+                      );
                 },
                 padding: EdgeInsets.all(0),
               ),
@@ -95,6 +111,43 @@ class SettingsScreen extends ConsumerWidget {
           ),
           SizedBox(height: 14),
           ListTile(
+            onTap:
+                () => showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      scrollable: true,
+                      content: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children:
+                            privacyPolicy.map((section) {
+                              final title = section.keys.first;
+                              final lines = section.values.first;
+
+                              return PoliceSettingWidget(
+                                title: title,
+                                lines: lines,
+                              );
+                            }).toList(),
+                      ),
+
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text(
+                            'Cerrar',
+                            style: TextStyle(
+                              fontSize:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.titleSmall!.fontSize,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
             leading: Icon(Icons.privacy_tip_outlined, size: 30),
             title: Text(
               'Politica de privacidad',
@@ -107,6 +160,43 @@ class SettingsScreen extends ConsumerWidget {
           ),
           SizedBox(height: 14),
           ListTile(
+            onTap:
+                () => showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      scrollable: true,
+                      content: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children:
+                            termsAndConditions.map((section) {
+                              final title = section.keys.first;
+                              final lines = section.values.first;
+
+                              return PoliceSettingWidget(
+                                title: title,
+                                lines: lines,
+                              );
+                            }).toList(),
+                      ),
+
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text(
+                            'Cerrar',
+                            style: TextStyle(
+                              fontSize:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.titleSmall!.fontSize,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
             leading: Icon(Icons.terminal_outlined, size: 30),
             title: Text(
               'Terminos y condiciones',
@@ -119,10 +209,47 @@ class SettingsScreen extends ConsumerWidget {
           ),
           SizedBox(height: 14),
           ListTile(
+            onTap:
+                () => showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      scrollable: true,
+                      content: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children:
+                            cachePolice.map((section) {
+                              final title = section.keys.first;
+                              final lines = section.values.first;
+
+                              return PoliceSettingWidget(
+                                title: title,
+                                lines: lines,
+                              );
+                            }).toList(),
+                      ),
+
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text(
+                            'Cerrar',
+                            style: TextStyle(
+                              fontSize:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.titleSmall!.fontSize,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
             leading: Icon(Icons.cookie_outlined, size: 30),
-            title: Text('Politica de cookies', style: TextStyle(fontSize: 20)),
+            title: Text('Politica de cache', style: TextStyle(fontSize: 20)),
             subtitle: Text(
-              'Leer la politica de cookies',
+              'Leer la politica de cache',
               style: TextStyle(fontSize: 16),
             ),
           ),
@@ -147,6 +274,43 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
       drawer: CustomDrawer(),
+    );
+  }
+}
+
+class PoliceSettingWidget extends StatelessWidget {
+  const PoliceSettingWidget({
+    super.key,
+    required this.title,
+    required this.lines,
+  });
+
+  final String title;
+  final List<String> lines;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          ...lines.map(
+            (line) => Padding(
+              padding: const EdgeInsets.only(left: 16.0, bottom: 4),
+              child: Text(
+                line,
+                style: const TextStyle(fontSize: 16, height: 1.4),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
