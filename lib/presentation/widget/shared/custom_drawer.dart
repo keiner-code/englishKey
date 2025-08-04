@@ -48,9 +48,9 @@ class CustomDrawer extends StatelessWidget {
           ),
           ListTile(
             leading: Icon(Icons.videogame_asset_outlined),
-            title: const Text('Estudios adicionales'),
+            title: const Text('Completa oraciones'),
             onTap: () {
-              context.go('');
+              context.go('/complete_sentence');
             },
           ),
           Divider(),

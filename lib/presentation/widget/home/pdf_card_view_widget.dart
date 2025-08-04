@@ -12,7 +12,7 @@ class PdfCardViewWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final screen = MediaQuery.of(context).size;
-    final isDarkMode = ref.watch(isDarkModeProvider);
+    final settingsState = ref.watch(settingProvider);
     return Card(
       margin: EdgeInsets.all(10),
       child: Column(
@@ -23,7 +23,13 @@ class PdfCardViewWidget extends ConsumerWidget {
               borderRadius: BorderRadius.circular(10),
               child: Stack(
                 children: [
-                  PDFView(filePath: note.content, nightMode: isDarkMode),
+                  PDFView(
+                    filePath: note.content,
+                    nightMode:
+                        settingsState.settings == null
+                            ? false
+                            : settingsState.settings!.darkMode,
+                  ),
                   Positioned(
                     top: 10,
                     right: 10,
@@ -53,7 +59,10 @@ class PdfCardViewWidget extends ConsumerWidget {
                           (_) => Dialog(
                             child: PDFView(
                               filePath: note.content,
-                              nightMode: isDarkMode,
+                              nightMode:
+                                  settingsState.settings == null
+                                      ? false
+                                      : settingsState.settings!.darkMode,
                             ),
                           ),
                     ),

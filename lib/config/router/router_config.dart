@@ -1,3 +1,4 @@
+import 'package:englishkey/presentation/screen/complete_sentences_screen.dart';
 import 'package:englishkey/presentation/screen/home_screen.dart';
 import 'package:englishkey/presentation/screen/lessons_screen.dart';
 import 'package:englishkey/presentation/screen/settings_screen.dart';
@@ -10,6 +11,10 @@ final GoRouter appRouterConfig = GoRouter(
     GoRoute(path: '/', builder: (context, state) => HomeScreen()),
     GoRoute(path: '/settings', builder: (context, state) => SettingsScreen()),
     GoRoute(path: '/lessons', builder: (context, state) => LessonsScreen()),
+    GoRoute(
+      path: '/complete_sentence',
+      builder: (context, state) => CompleteSentencesScreen(),
+    ),
     GoRoute(
       path: '/video_player',
       builder: (context, state) {
