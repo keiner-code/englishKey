@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class SelectedFileWidget extends ConsumerWidget {
   const SelectedFileWidget({super.key, required this.selectFolder});
-  final void Function(BuildContext context, WidgetRef ref) selectFolder;
+  final void Function(WidgetRef ref) selectFolder;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,7 +21,7 @@ class SelectedFileWidget extends ConsumerWidget {
             color: Theme.of(context).textTheme.titleSmall!.color,
           ),
         ),
-        onPressed: () => selectFolder(context, ref),
+        onPressed: () => selectFolder(ref),
       ),
     );
   }

@@ -55,11 +55,7 @@ class ListTileVideoWidget extends ConsumerWidget {
           fontWeight: FontWeight.w500,
         ),
       ),
-      subtitle:
-          showSubtitle
-              ? Text(video.path.split('/')[video.path.split('/').length - 2])
-              : SizedBox(),
-      trailing: FutureBuilder<Duration?>(
+      /* trailing: FutureBuilder<Duration?>(
         future: ref.read(lessonsProvider.notifier).getVideoDuration(video.path),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -90,7 +86,7 @@ class ListTileVideoWidget extends ConsumerWidget {
           }
           return Text('--:--', style: TextStyle(fontSize: 14));
         },
-      ),
+      ), */
       selected:
           ref.read(lessonsProvider).videoSelected != null
               ? video.path == ref.read(lessonsProvider).videoSelected!.path

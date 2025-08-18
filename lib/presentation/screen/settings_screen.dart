@@ -1,18 +1,22 @@
+import 'dart:io';
+
 import 'package:englishkey/core/constants/cache_policy.dart';
 import 'package:englishkey/core/constants/privacy_policy.dart';
 import 'package:englishkey/core/constants/terms_and_conditions.dart';
 import 'package:englishkey/domain/entities/settings.dart';
 import 'package:englishkey/presentation/providers/settings_provider.dart';
+import 'package:englishkey/presentation/providers/user_provider.dart';
 import 'package:englishkey/presentation/widget/shared/custom_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    //final settingState = ref.watch(settingProvider);
+    final userState = ref.watch(userProvider).state;
     final sizeTitle = Theme.of(context).textTheme.titleSmall;
     return Scaffold(
       appBar: AppBar(
@@ -40,14 +44,25 @@ class SettingsScreen extends ConsumerWidget {
           SizedBox(
             child: Column(
               children: [
-                Center(
-                  child: Image.asset(
-                    'assets/images/user-avatar.png',
-                    width: 150,
-                    height: 150,
-                  ),
-                ),
-                Text('Camila Rua Perez', style: TextStyle(fontSize: 22)),
+                userState.user == null
+                    ? Center(child: Icon(Icons.person, size: 70))
+                    : Center(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.file(
+                          fit: BoxFit.fill,
+                          File(userState.user!.photo!),
+                          width: 150,
+                          height: 150,
+                        ),
+                      ),
+                    ),
+                userState.user == null
+                    ? SizedBox()
+                    : Text(
+                      '${userState.user!.firstName} ${userState.user!.lastName}',
+                      style: TextStyle(fontSize: 22),
+                    ),
                 SizedBox(height: 5),
                 Divider(color: Colors.grey[500], height: 3, thickness: 0.4),
               ],
@@ -255,12 +270,13 @@ class SettingsScreen extends ConsumerWidget {
           ),
           SizedBox(height: 14),
           ListTile(
-            leading: Icon(Icons.message_outlined, size: 30),
-            title: Text('Contacto', style: TextStyle(fontSize: 20)),
+            leading: Icon(Icons.person, size: 30),
+            title: Text('Usuario', style: TextStyle(fontSize: 20)),
             subtitle: Text(
-              'Contactar al equipo de soporte',
+              'Gestionar datos del usuario',
               style: TextStyle(fontSize: 16),
             ),
+            onTap: () => context.push('/user'),
           ),
           SizedBox(height: 14),
           ListTile(

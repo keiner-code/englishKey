@@ -124,6 +124,8 @@ class LessonsNotifier extends StateNotifier<LessonsState> {
   }
 
   bool isTheVideoSavedLocally(String path) {
+    if (!state.lastPlayed.any((item) => item.videoPath == path)) return false;
+
     final videoExist = state.lastPlayed.firstWhere(
       (item) => item.videoPath == path,
     );
@@ -133,7 +135,7 @@ class LessonsNotifier extends StateNotifier<LessonsState> {
     final index = state.lastPlayed.indexWhere(
       (lasplayer) => lasplayer.videoPath == path,
     );
-    final listVideo = state.lastPlayed;
+    final listVideo = List<LastPlayer>.from(state.lastPlayed);
     final temp = listVideo[index];
     listVideo[index] = state.lastPlayed.first;
     listVideo.first = temp;
@@ -261,6 +263,7 @@ class LessonsNotifier extends StateNotifier<LessonsState> {
                   file.path.toLowerCase().endsWith('.mp4') ||
                   file.path.toLowerCase().endsWith('.avi') ||
                   file.path.toLowerCase().endsWith('.mov') ||
+                  file.path.toLowerCase().endsWith('.ts') ||
                   file.path.toLowerCase().endsWith('.mkv'),
             )
             .toList();
@@ -272,17 +275,7 @@ class LessonsNotifier extends StateNotifier<LessonsState> {
     loadDirectorySubtitles(directory);
   }
 
-  void pickFolders(BuildContext context) async {
-    final Directory rootPath = Directory('/storage/emulated/0');
-    final folderPath = await FilesystemPicker.open(
-      title: 'Selecciona una carpeta',
-      context: context,
-      rootDirectory: rootPath,
-      fsType: FilesystemType.folder,
-      pickText: 'Seleccionar esta carpeta',
-      folderIconColor: Colors.blue,
-    );
-
+  void pickFolders(String? folderPath) async {
     if (folderPath == null) {
       state = state.copyWith(errorMessage: 'Error al cargar las carpetas');
       return;

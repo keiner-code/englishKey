@@ -14,7 +14,7 @@ class AlertDialogSentence extends ConsumerStatefulWidget {
 class _AlertDialogSentenceState extends ConsumerState<AlertDialogSentence> {
   bool isError = false;
   final sentenceController = TextEditingController();
-  Icon? _selectedIcon;
+  Map<String, Icon>? _selectedIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -99,10 +99,9 @@ class _AlertDialogSentenceState extends ConsumerState<AlertDialogSentence> {
                               style: IconButton.styleFrom(
                                 padding: EdgeInsets.all(0),
                               ),
-                              icon: Icon(
-                                _selectedIcon!.icon,
-                                color: _selectedIcon!.color,
-                                size: 60,
+                              icon: IconTheme(
+                                data: const IconThemeData(size: 60),
+                                child: _selectedIcon!.entries.first.value,
                               ),
                             ),
                           ],
@@ -117,9 +116,7 @@ class _AlertDialogSentenceState extends ConsumerState<AlertDialogSentence> {
       actions: [
         TextButton(
           onPressed: () {
-            final String iconString =
-                '${_selectedIcon!.icon!.codePoint}|${_selectedIcon!.icon!.fontFamily}|${_selectedIcon!.color!.toARGB32()}';
-
+            final String iconString = _selectedIcon!.entries.first.key;
             final text = sentenceController.text.trim();
             if (text.isEmpty) {
               setState(() => isError = true);
@@ -164,7 +161,28 @@ class AlertDialogIconWidget extends StatelessWidget {
   });
 
   final Size mediaQuery;
-  final void Function(Icon selectedIcon) callbackSelectedIcon;
+  final void Function(Map<String, Icon> selectedIcon) callbackSelectedIcon;
+
+  List<Widget> showIcons(BuildContext context) {
+    final personalIcons = Emojis().personalIcons;
+    final List<Widget> listWidget = [];
+
+    for (var map in personalIcons) {
+      for (var entry in map.entries) {
+        listWidget.add(
+          GestureDetector(
+            onTap: () {
+              callbackSelectedIcon(map);
+              Navigator.of(context).pop();
+            },
+            child: entry.value,
+          ),
+        );
+      }
+    }
+
+    return listWidget;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -175,17 +193,7 @@ class AlertDialogIconWidget extends StatelessWidget {
         child: GridView.count(
           shrinkWrap: true,
           crossAxisCount: 5,
-          children:
-              Emojis().personalIcons.map((value) {
-                return GestureDetector(
-                  onTap: () {
-                    callbackSelectedIcon(value);
-                    Navigator.of(context).pop();
-                    //iconData, color
-                  },
-                  child: value,
-                );
-              }).toList(),
+          children: showIcons(context),
         ),
       ),
       actions: [

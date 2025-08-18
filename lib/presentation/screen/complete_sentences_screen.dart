@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:confetti/confetti.dart';
+import 'package:englishkey/core/constants/emojis.dart';
 import 'package:englishkey/core/constants/words_english.dart';
 import 'package:englishkey/domain/entities/sentences.dart';
 import 'package:englishkey/presentation/providers/senteces_provider.dart';
@@ -298,6 +299,14 @@ class _CompleteSentencesScreenState
                               Theme.of(context).textTheme.titleSmall!.fontSize,
                         ),
                       )
+                      : sentenceState.countFailures >= 4
+                      ? IconButton(
+                        onPressed: () {
+                          _selectedSentenceMethod(sentenceState.items);
+                          sentenceMethods.resetCounterFailures();
+                        },
+                        icon: Icon(Icons.refresh),
+                      )
                       : SizedBox(height: 26),
                   const SizedBox(height: 10),
                   (_selectedWords.length == blankCounter &&
@@ -346,25 +355,15 @@ class _CompleteSentencesScreenState
                   ),
                   SizedBox(height: 10),
                   ...sentenceState.sentences.map((item) {
-                    Icon? leadingIcon;
-                    final partIcon = item.iconString?.split('|');
-
-                    if (partIcon != null) {
-                      leadingIcon = Icon(
-                        IconData(
-                          int.parse(partIcon[0]),
-                          fontFamily: partIcon[1],
-                        ),
-                        color: Color(int.parse(partIcon[2])),
-                        size: 30,
-                      );
-                    }
-
+                    final iconsSelected = Emojis().personalIcons.firstWhere(
+                      (iconMap) => iconMap.entries.first.key == item.iconString,
+                      orElse: () => {"default": Icon(Icons.deblur)},
+                    );
                     return ListTile(
                       title: Text(item.sentence),
                       selected: item.isSelected,
                       selectedColor: Colors.lightBlue,
-                      leading: leadingIcon,
+                      leading: iconsSelected.entries.first.value,
                       trailing: Icon(Icons.check),
                       onTap: () {
                         sentenceMethods.createOrUpdate(

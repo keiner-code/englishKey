@@ -13,6 +13,7 @@ class SentenceState {
   final SentenceStatus status;
   final int failures;
   final int successes;
+  final int countFailures;
 
   const SentenceState({
     required this.sentences,
@@ -21,6 +22,7 @@ class SentenceState {
     required this.status,
     required this.failures,
     required this.successes,
+    required this.countFailures,
   });
 
   SentenceState copyWith({
@@ -30,6 +32,7 @@ class SentenceState {
     SentenceStatus? status,
     int? successes,
     int? failures,
+    int? countFailures,
   }) => SentenceState(
     sentences: sentences ?? this.sentences,
     items: items ?? this.items,
@@ -37,6 +40,7 @@ class SentenceState {
     status: status ?? this.status,
     failures: failures ?? this.failures,
     successes: successes ?? this.successes,
+    countFailures: countFailures ?? this.countFailures,
   );
 }
 
@@ -51,6 +55,7 @@ class SentenceNotifier extends StateNotifier<SentenceState> {
           status: SentenceStatus.initial,
           failures: 0,
           successes: 0,
+          countFailures: 0,
         ),
       );
 
@@ -59,7 +64,11 @@ class SentenceNotifier extends StateNotifier<SentenceState> {
     final key = 'success_key';
     final successAdd = state.successes + 1;
     await prefs.setInt(key, successAdd);
-    state = state.copyWith(successes: successAdd);
+    state = state.copyWith(successes: successAdd, countFailures: 0);
+  }
+
+  void resetCounterFailures() async {
+    state = state.copyWith(countFailures: 0);
   }
 
   void addFailures() async {
@@ -67,7 +76,10 @@ class SentenceNotifier extends StateNotifier<SentenceState> {
     final key = 'failures_key';
     final failuresAdd = state.failures + 1;
     await prefs.setInt(key, failuresAdd);
-    state = state.copyWith(failures: failuresAdd);
+    state = state.copyWith(
+      failures: failuresAdd,
+      countFailures: state.countFailures + 1,
+    );
   }
 
   createOrUpdate(Sentences sentence) async {

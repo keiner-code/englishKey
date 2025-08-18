@@ -3,6 +3,7 @@ import 'package:englishkey/domain/entities/last_player.dart';
 import 'package:englishkey/domain/entities/notes.dart';
 import 'package:englishkey/domain/entities/sentences.dart';
 import 'package:englishkey/domain/entities/settings.dart';
+import 'package:englishkey/domain/entities/suggestion.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -16,6 +17,7 @@ class IsarDatabase {
         LastPlayerSchema,
         SettingsSchema,
         SentencesSchema,
+        SuggestionSchema,
       ], directory: dir.path);
     }
 

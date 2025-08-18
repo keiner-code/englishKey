@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 class VideoPlayerScreen extends ConsumerStatefulWidget {
   const VideoPlayerScreen({super.key});
@@ -36,8 +37,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   @override
   void initState() {
     super.initState();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     final videoFile = ref.read(lessonsProvider).videoSelected;
+    if (videoFile != null) WakelockPlus.enable();
     initializeVideoPlayer(videoFile);
     validatePositionNextVideoToList();
     validatePositionPrevsVideoToList();
@@ -275,11 +276,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   @override
   void dispose() {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    //SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _controller?.removeListener(_videoListener);
     _controller?.dispose();
     _hideControlsTimer?.cancel();
     _subtitleTimer?.cancel();
+    WakelockPlus.disable();
     super.dispose();
   }
 

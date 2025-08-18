@@ -2,12 +2,14 @@ import 'package:englishkey/config/theme/theme_config.dart';
 import 'package:englishkey/presentation/providers/settings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:englishkey/config/router/router_config.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('es', null);
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   runApp(ProviderScope(child: const MainApp()));
 }
 

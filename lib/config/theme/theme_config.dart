@@ -26,6 +26,7 @@ class AppThemeData {
       primary: isDarkMode ? Colors.blueAccent : Colors.blue,
       secondary: isDarkMode ? Colors.teal : Colors.green,
       surface: isDarkMode ? Colors.grey[850]! : Colors.grey[200]!,
+      error: isDarkMode ? Colors.redAccent : Colors.red,
     ),
     cardColor:
         isDarkMode

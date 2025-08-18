@@ -3,30 +3,53 @@ import 'dart:io';
 import 'package:englishkey/config/permission/permission_config.dart';
 import 'package:englishkey/domain/entities/last_player.dart';
 import 'package:englishkey/presentation/providers/lessons_provider.dart';
+import 'package:englishkey/presentation/providers/user_provider.dart';
 import 'package:englishkey/presentation/widget/lessons/current_video_widget.dart';
 import 'package:englishkey/presentation/widget/lessons/list_tile_folder_widget.dart';
 import 'package:englishkey/presentation/widget/lessons/list_tile_video_widget.dart';
 import 'package:englishkey/presentation/widget/lessons/selected_file_widget.dart';
 import 'package:englishkey/presentation/widget/shared/custom_drawer.dart';
+import 'package:filesystem_picker/filesystem_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class LessonsScreen extends ConsumerWidget {
+class LessonsScreen extends ConsumerStatefulWidget {
   const LessonsScreen({super.key});
 
-  void selectFolder(BuildContext context, WidgetRef ref) async {
-    final granted = await PermissionConfig.askVideoPermission();
+  @override
+  ConsumerState<LessonsScreen> createState() => _LessonsScreenState();
+}
 
-    if (granted) {
-      ref.read(lessonsProvider.notifier).pickFolders(context);
+class _LessonsScreenState extends ConsumerState<LessonsScreen> {
+  void selectFolder(WidgetRef ref) async {
+    final Directory rootPath = Directory('/storage/emulated/0');
+    final folderPath = await FilesystemPicker.open(
+      title: 'Selecciona una carpeta',
+      context: context,
+      rootDirectory: rootPath,
+      fsType: FilesystemType.folder,
+      pickText: 'Seleccionar esta carpeta',
+      folderIconColor: Colors.blue,
+    );
+
+    if (!mounted) return;
+
+    if (folderPath != null) {
+      ref.read(lessonsProvider.notifier).pickFolders(folderPath);
     }
   }
 
+  String titlefolder(File file) {
+    final partFile = file.path.split('/');
+    return partFile[partFile.length - 2];
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme.titleSmall;
     final lessonState = ref.watch(lessonsProvider);
+    final userState = ref.watch(userProvider).state;
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -47,10 +70,15 @@ class LessonsScreen extends ConsumerWidget {
                       height: 40,
                       child: ClipRRect(
                         borderRadius: BorderRadius.all(Radius.circular(100)),
-                        child: Image.asset('assets/images/user-avatar.png'),
+                        child:
+                            userState.user != null
+                                ? Image.file(File(userState.user!.photo!))
+                                : Icon(Icons.person, size: 30),
                       ),
                     ),
-                    Text('Hi Keiner Jesus'),
+                    userState.user != null
+                        ? Text('Hi ${userState.user!.firstName}')
+                        : SizedBox(),
                   ],
                 ),
                 Spacer(),
@@ -100,18 +128,38 @@ class LessonsScreen extends ConsumerWidget {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  onTap: () => selectFolder(context, ref),
+                  onTap: () async {
+                    final granted = await PermissionConfig.askVideoPermission();
+                    if (!granted) return;
+                    selectFolder(ref);
+                  },
                   trailing:
                       lessonState.directories.isNotEmpty
                           ? Icon(Icons.add)
                           : SizedBox(),
                 )
-                : Align(
-                  alignment: Alignment.centerLeft,
-                  child: IconButton(
-                    onPressed:
-                        () => ref.read(lessonsProvider.notifier).removeFiles(),
-                    icon: Icon(Icons.arrow_back),
+                : SizedBox(
+                  width: double.infinity,
+                  height: 40,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      Center(
+                        child: IconButton(
+                          onPressed:
+                              () =>
+                                  ref
+                                      .read(lessonsProvider.notifier)
+                                      .removeFiles(),
+                          icon: Icon(Icons.arrow_back),
+                        ),
+                      ),
+                      Center(
+                        child: Text(
+                          titlefolder(lessonState.listVideoToDirectory.first),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 
