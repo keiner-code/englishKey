@@ -71,7 +71,8 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.all(Radius.circular(100)),
                         child:
-                            userState.user != null
+                            (userState.user != null &&
+                                    userState.user!.photo != null)
                                 ? Image.file(File(userState.user!.photo!))
                                 : Icon(Icons.person, size: 30),
                       ),

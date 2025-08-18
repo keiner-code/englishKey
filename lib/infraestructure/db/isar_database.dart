@@ -9,18 +9,17 @@ import 'package:path_provider/path_provider.dart';
 
 class IsarDatabase {
   static Future<Isar> openDB() async {
-    if (Isar.instanceNames.isEmpty) {
-      final dir = await getApplicationDocumentsDirectory();
-      return await Isar.open([
-        NoteSchema,
-        DirectoriesSchema,
-        LastPlayerSchema,
-        SettingsSchema,
-        SentencesSchema,
-        SuggestionSchema,
-      ], directory: dir.path);
-    }
-
-    return Future.value(Isar.getInstance());
+    var isar = Isar.getInstance();
+    if (isar != null) return isar;
+    final dir = await getApplicationDocumentsDirectory();
+    isar = await Isar.open([
+      NoteSchema,
+      DirectoriesSchema,
+      LastPlayerSchema,
+      SettingsSchema,
+      SentencesSchema,
+      SuggestionSchema,
+    ], directory: dir.path);
+    return isar;
   }
 }

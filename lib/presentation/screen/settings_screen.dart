@@ -44,19 +44,21 @@ class SettingsScreen extends ConsumerWidget {
           SizedBox(
             child: Column(
               children: [
-                userState.user == null
-                    ? Center(child: Icon(Icons.person, size: 70))
-                    : Center(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.file(
-                          fit: BoxFit.fill,
-                          File(userState.user!.photo!),
-                          width: 150,
-                          height: 150,
-                        ),
-                      ),
-                    ),
+                Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child:
+                        (userState.user != null &&
+                                userState.user!.photo != null)
+                            ? Image.file(
+                              fit: BoxFit.fill,
+                              File(userState.user!.photo!),
+                              width: 150,
+                              height: 150,
+                            )
+                            : Icon(Icons.person, size: 70),
+                  ),
+                ),
                 userState.user == null
                     ? SizedBox()
                     : Text(
