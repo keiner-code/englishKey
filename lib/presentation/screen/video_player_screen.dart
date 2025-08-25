@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:englishkey/presentation/providers/lessons_provider.dart';
-import 'package:englishkey/presentation/widget/lessons/slider_list_video_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,9 +29,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   Timer? _subtitleTimer;
   List<Subtitle> _subtitles = [];
   Subtitle? _currentSubtitle;
-  bool _showSlider = false;
   bool _isEndVideo = false;
   bool _isFirstVideo = false;
+  Duration _lastSavePos = Duration.zero;
 
   @override
   void initState() {
@@ -47,7 +46,13 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   void initializeVideoPlayer(File? videoFile) {
     if (videoFile != null && videoFile.existsSync()) {
       _controller = VideoPlayerController.file(videoFile)
-        ..initialize().then((_) {
+        ..initialize().then((_) async {
+          final resume =
+              ref.read(lessonsProvider).resumenPositions[videoFile.path] ??
+              Duration.zero;
+          if (resume > Duration.zero && resume < _controller!.value.duration) {
+            await _controller!.seekTo(resume);
+          }
           setState(() {});
           _controller!.play();
           _startHideControlsTimer();
@@ -70,6 +75,10 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         _controller!.value.position >= _controller!.value.duration;
 
     if (isEndVideo && !_controller!.value.isPlaying) {
+      final current = ref.read(lessonsProvider).videoSelected;
+      if (current != null) {
+        ref.read(lessonsProvider.notifier).clearPosition(current);
+      }
       _controller!.removeListener(_videoListener);
       if (!_isEndVideo) {
         _playNextVideo();
@@ -103,6 +112,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     final lessons = ref.read(lessonsProvider.notifier);
     final state = ref.read(lessonsProvider);
 
+    if (state.videoSelected != null && _controller != null) {
+      ref
+          .read(lessonsProvider.notifier)
+          .updatePositionTovideo(_controller!.value.position);
+    }
+
     final currentIndex = state.listVideoToDirectory.indexOf(
       state.videoSelected!,
     );
@@ -124,9 +139,16 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     final lessons = ref.read(lessonsProvider.notifier);
     final state = ref.read(lessonsProvider);
 
-    final currentIndex = state.listVideoToDirectory.indexOf(
-      state.videoSelected!,
+    if (state.videoSelected != null && _controller != null) {
+      ref
+          .read(lessonsProvider.notifier)
+          .updatePositionTovideo(_controller!.value.position);
+    }
+
+    final currentIndex = state.listVideoToDirectory.indexWhere(
+      (value) => value.path == state.videoSelected!.path,
     );
+
     final nextIndex = currentIndex + 1;
 
     if (nextIndex >= state.listVideoToDirectory.length) return;
@@ -214,6 +236,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       if (_controller == null || !_controller!.value.isInitialized) return;
 
       final position = _controller!.value.position;
+
+      if ((position - _lastSavePos).inMilliseconds.abs() >= 1000) {
+        ref.read(lessonsProvider.notifier).updatePositionTovideo(position);
+        _lastSavePos = position;
+      }
+
       final current = _getCurrentSubtitle(position);
 
       if (current?.text != _currentSubtitle?.text) {
@@ -276,7 +304,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   @override
   void dispose() {
-    //SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _controller?.removeListener(_videoListener);
     _controller?.dispose();
     _hideControlsTimer?.cancel();
@@ -288,7 +315,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   @override
   Widget build(BuildContext context) {
     final lessonState = ref.watch(lessonsProvider);
-    final screen = MediaQuery.of(context).size;
     return Scaffold(
       backgroundColor: Colors.black,
       body:
@@ -347,18 +373,29 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                       Positioned(
                         top: 40,
                         left: 16,
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.white,
-                          ),
-                          onPressed: () {
-                            if (Navigator.canPop(context)) {
-                              Navigator.of(context).pop();
-                            } else {
-                              SystemNavigator.pop();
-                            }
-                          },
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(
+                                Icons.arrow_back,
+                                color: Colors.white,
+                              ),
+                              onPressed: () {
+                                if (Navigator.canPop(context)) {
+                                  Navigator.of(context).pop();
+                                } else {
+                                  SystemNavigator.pop();
+                                }
+                              },
+                            ),
+                            Text(
+                              lessonState.videoSelected!.path.split('/').last,
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey[300],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       Positioned(
@@ -401,9 +438,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                 children: [
                                   IconButton(
                                     onPressed:
-                                        _isFirstVideo
-                                            ? null
-                                            : _playPrevsVideo, //TODO
+                                        _isFirstVideo ? null : _playPrevsVideo,
                                     icon: Icon(Icons.skip_previous, size: 40),
                                   ),
                                   IconButton(
@@ -483,62 +518,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                             ),
                           )
                           : const SizedBox(),
-                      Positioned(
-                        right: 0,
-                        top: screen.height / 3,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.brown.withAlpha(200),
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(12),
-                              bottomLeft: Radius.circular(12),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withAlpha(70),
-                                offset: const Offset(-2, 2),
-                                blurRadius: 6,
-                              ),
-                            ],
-                          ),
-                          child:
-                              _showSlider
-                                  ? SizedBox()
-                                  : IconButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        _showSlider = true;
-                                      });
-                                    },
-                                    icon: Icon(
-                                      Icons.arrow_back_ios,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                        ),
-                      ),
-                      AnimatedPositioned(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                        top: 0,
-                        bottom: 0,
-                        right: _showSlider ? 0 : -screen.width * 0.4,
-                        child: GestureDetector(
-                          onDoubleTap: () {
-                            setState(() {
-                              _showSlider = false;
-                            });
-                          },
-                          onHorizontalDragEnd: (details) {
-                            if (details.velocity.pixelsPerSecond.dx > 300) {
-                              setState(() {
-                                _showSlider = false;
-                              });
-                            }
-                          },
-                          child: SliderListVideoWidget(),
-                        ),
-                      ),
                     ],
                   ],
                 ),

@@ -14,7 +14,7 @@ class CurrentVideoWidget extends ConsumerWidget {
       onTap: () {
         ref
             .read(lessonsProvider.notifier)
-            .showVideoState(File(lessonState.lastPlayed.first.videoPath));
+            .showVideoState(lessonState.lastPlayed.last);
         context.push('/video_player');
       },
       child: Container(
@@ -28,7 +28,7 @@ class CurrentVideoWidget extends ConsumerWidget {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(10),
                       child: Image.file(
-                        File(lessonState.lastPlayed.first.thumbnail),
+                        File(lessonState.lastPlayed.last.thumbnail),
                       ),
                     ),
                     Positioned(
@@ -50,7 +50,7 @@ class CurrentVideoWidget extends ConsumerWidget {
                               ),
                             ),
                             Text(
-                              lessonState.lastPlayed.first.videoPath
+                              lessonState.lastPlayed.last.videoPath
                                   .split('/')
                                   .last
                                   .split('.')[1],

@@ -92,43 +92,43 @@ class _UserScreenState extends ConsumerState<UserScreen> {
                     ),
                   ],
                 ),
-                child:
-                    userState.user != null
-                        ? Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: Image.file(
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child:
+                          (userState.user != null &&
+                                  userState.user!.photo != null)
+                              ? Image.file(
                                 File(userState.user!.photo!),
                                 fit: BoxFit.contain,
                                 width: double.infinity,
                                 height: double.infinity,
-                              ),
-                            ),
-                            Positioned(
-                              right: 0,
-                              top: 0,
-                              child: IconButton(
-                                onPressed: () => selectedImage(),
-                                icon: const Icon(Icons.add),
-                                style: IconButton.styleFrom(
-                                  padding: EdgeInsets.zero,
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  backgroundColor:
-                                      Theme.of(context).colorScheme.primary,
+                              )
+                              : Center(
+                                child: Text(
+                                  'No hay usuario configurado',
+                                  style: theme,
                                 ),
-                                color: Colors.white,
                               ),
-                            ),
-                          ],
-                        )
-                        : Center(
-                          child: Text(
-                            'No hay usuario configurado',
-                            style: theme,
-                          ),
+                    ),
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: IconButton(
+                        onPressed: () => selectedImage(),
+                        icon: const Icon(Icons.add),
+                        style: IconButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
                         ),
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               SizedBox(height: 10),
               Form(

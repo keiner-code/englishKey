@@ -73,10 +73,17 @@ class CustomDrawer extends ConsumerWidget {
                   ),
                   const Divider(),
                   ListTile(
+                    leading: const Icon(Icons.text_snippet_sharp),
+                    title: const Text('Oraciónes'),
+                    onTap: () => context.go('/sentences'),
+                  ),
+                  ListTile(
                     leading: const Icon(Icons.account_circle_outlined),
                     title: const Text('Sugerencias'),
                     onTap: () => context.go('/suggestion'),
                   ),
+                  const Divider(),
+
                   ListTile(
                     leading: const Icon(Icons.settings_outlined),
                     title: const Text('Configuración'),

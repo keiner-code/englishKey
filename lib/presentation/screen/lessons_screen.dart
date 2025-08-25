@@ -78,7 +78,9 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
                       ),
                     ),
                     userState.user != null
-                        ? Text('Hi ${userState.user!.firstName}')
+                        ? Text(
+                          'Hi ${userState.user!.firstName} ${userState.user!.lastName}',
+                        )
                         : SizedBox(),
                   ],
                 ),
@@ -106,6 +108,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
                   lessonState.lastPlayed.isNotEmpty
                       ? ListView.builder(
                         scrollDirection: Axis.horizontal,
+                        reverse: true,
                         itemCount: lessonState.lastPlayed.length,
                         itemBuilder: (context, index) {
                           final topVideo = lessonState.lastPlayed[index];
@@ -205,9 +208,7 @@ class CardVideoLessonWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        ref
-            .read(lessonsProvider.notifier)
-            .showVideoState(File(topVideo.videoPath));
+        ref.read(lessonsProvider.notifier).showVideoState(topVideo);
         context.push('/video_player');
       },
       child: Container(

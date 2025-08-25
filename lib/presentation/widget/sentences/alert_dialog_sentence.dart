@@ -5,7 +5,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AlertDialogSentence extends ConsumerStatefulWidget {
-  const AlertDialogSentence({super.key});
+  const AlertDialogSentence({
+    super.key,
+    this.selectedIcon,
+    this.textInput,
+    this.id,
+  });
+
+  final String? textInput;
+  final String? selectedIcon;
+  final int? id;
+
   @override
   ConsumerState<AlertDialogSentence> createState() =>
       _AlertDialogSentenceState();
@@ -14,7 +24,21 @@ class AlertDialogSentence extends ConsumerStatefulWidget {
 class _AlertDialogSentenceState extends ConsumerState<AlertDialogSentence> {
   bool isError = false;
   final sentenceController = TextEditingController();
+  final personalIcons = Emojis().personalIcons;
   Map<String, Icon>? _selectedIcon;
+
+  @override
+  void initState() {
+    super.initState();
+    sentenceController.text = widget.textInput ?? '';
+
+    if (sentenceController.text.isNotEmpty) {
+      _selectedIcon = Emojis().personalIcons.firstWhere(
+        (iconMap) => iconMap.entries.first.key == widget.selectedIcon,
+        orElse: () => {},
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -126,6 +150,7 @@ class _AlertDialogSentenceState extends ConsumerState<AlertDialogSentence> {
                 .read(sentencesProvider.notifier)
                 .createOrUpdate(
                   Sentences(
+                    id: widget.id,
                     sentence: text,
                     isItem: false,
                     iconString: iconString,
@@ -137,7 +162,7 @@ class _AlertDialogSentenceState extends ConsumerState<AlertDialogSentence> {
             });
           },
           child: Text(
-            'Agregar',
+            sentenceController.text.isEmpty ? 'Agregar' : 'Actualizar',
             style: TextStyle(fontSize: textTheme.titleSmall!.fontSize),
           ),
         ),

@@ -1,6 +1,7 @@
 import 'package:englishkey/presentation/screen/complete_sentences_screen.dart';
 import 'package:englishkey/presentation/screen/home_screen.dart';
 import 'package:englishkey/presentation/screen/lessons_screen.dart';
+import 'package:englishkey/presentation/screen/sentences_screen.dart';
 import 'package:englishkey/presentation/screen/settings_screen.dart';
 import 'package:englishkey/presentation/screen/suggestion_screen.dart';
 import 'package:englishkey/presentation/screen/user_screen.dart';
@@ -29,5 +30,6 @@ final GoRouter appRouterConfig = GoRouter(
         return VideoPlayerScreen(key: ValueKey(keyString ?? 'default'));
       },
     ),
+    GoRoute(path: '/sentences', builder: (context, state) => SentencesScreen()),
   ],
 );

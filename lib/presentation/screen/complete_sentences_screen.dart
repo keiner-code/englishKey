@@ -5,6 +5,7 @@ import 'package:englishkey/core/constants/emojis.dart';
 import 'package:englishkey/core/constants/words_english.dart';
 import 'package:englishkey/domain/entities/sentences.dart';
 import 'package:englishkey/presentation/providers/senteces_provider.dart';
+import 'package:englishkey/presentation/widget/sentences/alert_dialog_sentence.dart';
 import 'package:englishkey/presentation/widget/sentences/alert_dialog_sentence_Item.dart';
 import 'package:englishkey/presentation/widget/shared/custom_drawer.dart';
 import 'package:flutter/foundation.dart';
@@ -381,6 +382,16 @@ class _CompleteSentencesScreenState
                           !item.isSelected,
                         );
                       },
+                      onLongPress:
+                          () => showDialog(
+                            context: context,
+                            builder:
+                                (context) => AlertDialogSentence(
+                                  id: item.id,
+                                  selectedIcon: item.iconString,
+                                  textInput: item.sentence,
+                                ),
+                          ),
                     );
                   }),
                 ],

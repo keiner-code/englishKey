@@ -4,8 +4,6 @@ import 'package:englishkey/domain/entities/directories.dart';
 import 'package:englishkey/domain/entities/last_player.dart';
 import 'package:englishkey/infraestructure/datasources/video_player_datasource_impl.dart';
 import 'package:englishkey/infraestructure/repositories/video_player_repository_impl.dart';
-import 'package:filesystem_picker/filesystem_picker.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,6 +18,7 @@ class LessonsState {
   final List<File>? subtitleFiles;
   final List<Map<String, File>> subtitles;
   final List<LastPlayer> lastPlayed;
+  final Map<String, Duration> resumenPositions;
 
   const LessonsState({
     required this.listVideoToDirectory,
@@ -29,6 +28,7 @@ class LessonsState {
     this.subtitleFiles,
     this.subtitles = const [],
     this.lastPlayed = const [],
+    this.resumenPositions = const {},
   });
 
   LessonsState copyWith({
@@ -40,6 +40,7 @@ class LessonsState {
     List<File>? subtitleFiles,
     List<Map<String, File>>? subtitles,
     List<LastPlayer>? lastPlayed,
+    final Map<String, Duration>? resumenPositions,
   }) => LessonsState(
     listVideoToDirectory: listVideoToDirectory ?? this.listVideoToDirectory,
     errorMessage: errorMessage ?? this.errorMessage,
@@ -48,6 +49,7 @@ class LessonsState {
     subtitleFiles: subtitleFiles ?? this.subtitleFiles,
     subtitles: subtitles ?? this.subtitles,
     lastPlayed: lastPlayed ?? this.lastPlayed,
+    resumenPositions: resumenPositions ?? this.resumenPositions,
   );
 }
 
@@ -55,6 +57,20 @@ class LessonsNotifier extends StateNotifier<LessonsState> {
   VideoPlayerRepositoryImpl repository;
   LessonsNotifier({required this.repository})
     : super(LessonsState(listVideoToDirectory: [], directories: []));
+
+  void updatePositionTovideo(Duration pos) {
+    final path = state.videoSelected?.path;
+    if (path == null) return;
+    final map = Map<String, Duration>.from(state.resumenPositions);
+    map[path] = pos;
+    state = state.copyWith(resumenPositions: map);
+  }
+
+  void clearPosition(File file) {
+    final map = Map<String, Duration>.from(state.resumenPositions);
+    map.remove(file.path);
+    state = state.copyWith(resumenPositions: map);
+  }
 
   void getAllDirectories() async {
     final response = await repository.listDirectories();
@@ -143,14 +159,25 @@ class LessonsNotifier extends StateNotifier<LessonsState> {
     return true;
   }
 
-  void showVideoState(File video) {
-    state = state.copyWith(videoSelected: video);
-    final directory = video.parent;
+  void showVideoState(LastPlayer video) {
+    final videoFile = File(video.videoPath);
+    state = state.copyWith(videoSelected: videoFile);
+    final directory = videoFile.parent;
     readVideoToFolder(directory);
 
+    //charge subtitles
     if (state.subtitleFiles != null) {
-      loadSubtitleList(video);
+      loadSubtitleList(videoFile);
     }
+
+    //Remove video in the position
+    final updateLastPlayer =
+        state.lastPlayed.where((item) => item.id != video.id).toList();
+
+    //Add video first position
+    updateLastPlayer.add(video);
+
+    state = state.copyWith(lastPlayed: updateLastPlayer);
   }
 
   void addVideoSelected(File video) async {
@@ -179,6 +206,7 @@ class LessonsNotifier extends StateNotifier<LessonsState> {
       );
       return;
     }
+
     //Controlar los duplicados y posicionarlos
     if (await deleteVideo()) {
       final newVideo = await repository.addVideoOrUpdate(

@@ -14,6 +14,7 @@ class SentenceState {
   final int failures;
   final int successes;
   final int countFailures;
+  final List<Map<String, List<Sentences>>> mapSentenceList;
 
   const SentenceState({
     required this.sentences,
@@ -23,6 +24,7 @@ class SentenceState {
     required this.failures,
     required this.successes,
     required this.countFailures,
+    required this.mapSentenceList,
   });
 
   SentenceState copyWith({
@@ -33,6 +35,7 @@ class SentenceState {
     int? successes,
     int? failures,
     int? countFailures,
+    List<Map<String, List<Sentences>>>? mapSentenceList,
   }) => SentenceState(
     sentences: sentences ?? this.sentences,
     items: items ?? this.items,
@@ -41,6 +44,7 @@ class SentenceState {
     failures: failures ?? this.failures,
     successes: successes ?? this.successes,
     countFailures: countFailures ?? this.countFailures,
+    mapSentenceList: mapSentenceList ?? this.mapSentenceList,
   );
 }
 
@@ -56,6 +60,7 @@ class SentenceNotifier extends StateNotifier<SentenceState> {
           failures: 0,
           successes: 0,
           countFailures: 0,
+          mapSentenceList: [],
         ),
       );
 
@@ -146,7 +151,9 @@ class SentenceNotifier extends StateNotifier<SentenceState> {
         status: SentenceStatus.success,
         sentences: response,
       );
-
+      if (response.isNotEmpty) {
+        getAllSentencesItems(response);
+      }
       final selectedSentence = response.where(
         (value) => value.isSelected == true,
       );
@@ -166,7 +173,30 @@ class SentenceNotifier extends StateNotifier<SentenceState> {
     }
   }
 
-  getAllSentencesItems() {}
+  getAllSentencesItems(List<Sentences> senteces) async {
+    state = state.copyWith(errorMessage: '', status: SentenceStatus.loading);
+    final List<Map<String, List<Sentences>>> sentenceListMap = [];
+    try {
+      for (var sentence in senteces) {
+        final response = await repositoryImpl.getAllItems(
+          idSentence: sentence.id!,
+        );
+        sentenceListMap.add({sentence.sentence: response});
+      }
+      state = state.copyWith(
+        errorMessage: '',
+        status: SentenceStatus.success,
+        mapSentenceList: sentenceListMap,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        errorMessage: 'Error interno $e',
+        status: SentenceStatus.initial,
+        mapSentenceList: [],
+      );
+    }
+  }
+
   removeSentence(int id) {}
 }
 

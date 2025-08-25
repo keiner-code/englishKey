@@ -55,38 +55,6 @@ class ListTileVideoWidget extends ConsumerWidget {
           fontWeight: FontWeight.w500,
         ),
       ),
-      /* trailing: FutureBuilder<Duration?>(
-        future: ref.read(lessonsProvider.notifier).getVideoDuration(video.path),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return SizedBox(
-              width: 20,
-              height: 20,
-              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-            );
-          }
-          if (snapshot.hasData && snapshot.data != null) {
-            final duration = snapshot.data!;
-            final hours = duration.inHours;
-            final minutes = duration.inMinutes
-                .remainder(60)
-                .toString()
-                .padLeft(2, '0');
-            final seconds = duration.inSeconds
-                .remainder(60)
-                .toString()
-                .padLeft(2, '0');
-
-            final formatted =
-                hours > 0
-                    ? '${hours.toString().padLeft(2, '0')}:$minutes:$seconds'
-                    : '$minutes:$seconds';
-
-            return Text(formatted, style: TextStyle(fontSize: 14));
-          }
-          return Text('--:--', style: TextStyle(fontSize: 14));
-        },
-      ), */
       selected:
           ref.read(lessonsProvider).videoSelected != null
               ? video.path == ref.read(lessonsProvider).videoSelected!.path
