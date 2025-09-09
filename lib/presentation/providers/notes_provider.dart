@@ -54,7 +54,7 @@ class NotesNotifier extends StateNotifier<NotesState> {
 
       if (wasNew) {
         //save
-        state = state.copyWith(notes: [...state.notes, newNote]);
+        state = state.copyWith(notes: [newNote, ...state.notes]);
       }
 
       if (currentNote.id != null) {
@@ -107,7 +107,10 @@ class NotesNotifier extends StateNotifier<NotesState> {
   void listNotes() async {
     state = state.copyWith(status: NotesStatus.loading);
     final notes = await repository.listNotes();
-    state = state.copyWith(notes: notes, status: NotesStatus.success);
+    state = state.copyWith(
+      notes: notes.reversed.toList(),
+      status: NotesStatus.success,
+    );
     await Future.delayed(Duration(seconds: 2));
     state = state.copyWith(status: NotesStatus.initial);
   }

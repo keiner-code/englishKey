@@ -6,7 +6,7 @@ import 'package:englishkey/core/constants/words_english.dart';
 import 'package:englishkey/domain/entities/sentences.dart';
 import 'package:englishkey/presentation/providers/senteces_provider.dart';
 import 'package:englishkey/presentation/widget/sentences/alert_dialog_sentence.dart';
-import 'package:englishkey/presentation/widget/sentences/alert_dialog_sentence_Item.dart';
+import 'package:englishkey/presentation/widget/shared/alert_dialog_sentence_item.dart';
 import 'package:englishkey/presentation/widget/shared/custom_drawer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -258,7 +258,8 @@ class _CompleteSentencesScreenState
             onPressed:
                 () => showDialog(
                   context: context,
-                  builder: (context) => AlertDialogSentenceItem(),
+                  builder:
+                      (context) => AlertDialogSentenceItem(isUpdate: false),
                 ),
             icon: Icon(Icons.add),
           ),
@@ -347,7 +348,9 @@ class _CompleteSentencesScreenState
                                 () => showDialog(
                                   context: context,
                                   builder:
-                                      (context) => AlertDialogSentenceItem(),
+                                      (context) => AlertDialogSentenceItem(
+                                        isUpdate: false,
+                                      ),
                                 ),
                             icon: Icon(Icons.add),
                           )
@@ -387,6 +390,7 @@ class _CompleteSentencesScreenState
                             context: context,
                             builder:
                                 (context) => AlertDialogSentence(
+                                  isUpdate: true,
                                   id: item.id,
                                   selectedIcon: item.iconString,
                                   textInput: item.sentence,

@@ -74,7 +74,9 @@ class TextCardWidget extends ConsumerWidget {
                         context: context,
                         builder: (context) {
                           return AlertDialogWidget(
-                            titleDialog: 'update',
+                            isSave: false,
+                            message: 'Nota actualizada con exito',
+                            titleDialog: 'Actualizar nota',
                             noteCallback: ({required note}) {
                               ref
                                   .read(notesProvider.notifier)

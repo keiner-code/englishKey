@@ -10,11 +10,13 @@ class AlertDialogSentence extends ConsumerStatefulWidget {
     this.selectedIcon,
     this.textInput,
     this.id,
+    required this.isUpdate,
   });
 
   final String? textInput;
   final String? selectedIcon;
   final int? id;
+  final bool isUpdate;
 
   @override
   ConsumerState<AlertDialogSentence> createState() =>
@@ -162,7 +164,7 @@ class _AlertDialogSentenceState extends ConsumerState<AlertDialogSentence> {
             });
           },
           child: Text(
-            sentenceController.text.isEmpty ? 'Agregar' : 'Actualizar',
+            widget.isUpdate ? 'Actualizar' : 'Agregar',
             style: TextStyle(fontSize: textTheme.titleSmall!.fontSize),
           ),
         ),

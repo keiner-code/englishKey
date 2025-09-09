@@ -12,11 +12,15 @@ class AlertDialogWidget extends StatefulWidget {
     this.contentForm,
     this.titleForm,
     this.idNote,
+    required this.message,
+    required this.isSave,
   });
   final Function({required Note note}) noteCallback;
   final String titleDialog;
+  final String message;
   final String? titleForm;
   final String? contentForm;
+  final bool isSave;
   final Id? idNote;
   @override
   State<AlertDialogWidget> createState() => _AlertDialogWidgetState();
@@ -50,9 +54,7 @@ class _AlertDialogWidgetState extends State<AlertDialogWidget> {
         final noteState = ref.watch(notesProvider);
         return AlertDialog(
           //alignment: Alignment(0, -0.7),
-          title: Text(
-            widget.titleDialog == 'save' ? 'Agregar nota' : 'Actualizar nota',
-          ),
+          title: Text(widget.titleDialog),
           content: Form(
             key: _formKey,
             child: SizedBox(
@@ -102,9 +104,7 @@ class _AlertDialogWidgetState extends State<AlertDialogWidget> {
                     ),
                   if (noteState.status == NotesStatus.success)
                     Text(
-                      widget.titleDialog == 'save'
-                          ? 'Usuario Agregado Con exito'
-                          : 'Usuario actualizado con exito',
+                      widget.message,
                       style: TextStyle(color: Colors.blue[600], fontSize: 16),
                     ),
                   if (noteState.errorMessage != null)
@@ -131,7 +131,7 @@ class _AlertDialogWidgetState extends State<AlertDialogWidget> {
                 }
               },
               child: Text(
-                widget.titleDialog == 'save' ? 'Agregar' : 'Actualizar',
+                widget.isSave ? 'Agregar' : 'Actualizar',
                 style: TextStyle(fontSize: textTheme.titleSmall!.fontSize),
               ),
             ),

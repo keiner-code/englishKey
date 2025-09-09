@@ -71,7 +71,9 @@ class HomeScreen extends ConsumerWidget {
                 context: context,
                 builder:
                     (context) => AlertDialogWidget(
-                      titleDialog: 'save',
+                      titleDialog: 'Agregar nota',
+                      isSave: true,
+                      message: 'Nota agregada con exito',
                       noteCallback: ({required note}) {
                         ref.read(notesProvider.notifier).addOrUpdateNote(note);
                       },
@@ -101,24 +103,32 @@ class HomeScreen extends ConsumerWidget {
           },
         ),
       ),
-      body: ListView.builder(
-        itemCount: noteState.notes.length,
-        itemBuilder: (context, index) {
-          final currentNote = noteState.notes[index];
-          if (currentNote.title == 'image') {
-            return ImageCardWidget(note: currentNote);
-          }
+      body:
+          noteState.notes.isEmpty
+              ? Center(
+                child: Text(
+                  'Agrege una nota una imagen o un pdf para comenzar',
+                  style: TextStyle(color: textTheme.color, fontSize: 18),
+                ),
+              )
+              : ListView.builder(
+                itemCount: noteState.notes.length,
+                itemBuilder: (context, index) {
+                  final currentNote = noteState.notes[index];
+                  if (currentNote.title == 'image') {
+                    return ImageCardWidget(note: currentNote);
+                  }
 
-          if (currentNote.title == 'custom') {
-            return PdfCardViewWidget(note: currentNote);
-          }
+                  if (currentNote.title == 'custom') {
+                    return PdfCardViewWidget(note: currentNote);
+                  }
 
-          return TextCardWidget(
-            color: cardColors[index % cardColors.length],
-            note: currentNote,
-          );
-        },
-      ),
+                  return TextCardWidget(
+                    color: cardColors[index % cardColors.length],
+                    note: currentNote,
+                  );
+                },
+              ),
       drawer: CustomDrawer(),
     );
   }

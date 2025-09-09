@@ -193,17 +193,13 @@ class LessonsNotifier extends StateNotifier<LessonsState> {
     final thumbnailPath = await generateThumbnail(video.path);
 
     //Validate video
-    if (isTheVideoSavedLocally(video.path)) return;
-
-    if (state.lastPlayed.length < 7) {
+    if (state.lastPlayed.length < 7 && !isTheVideoSavedLocally(video.path)) {
       //add to local
       final newVideo = await repository.addVideoOrUpdate(
         video: LastPlayer(videoPath: video.path, thumbnail: thumbnailPath),
       );
 
-      state = state.copyWith(
-        lastPlayed: [...state.lastPlayed, newVideo].reversed.toList(),
-      );
+      state = state.copyWith(lastPlayed: [newVideo, ...state.lastPlayed]);
       return;
     }
 
@@ -213,9 +209,7 @@ class LessonsNotifier extends StateNotifier<LessonsState> {
         video: LastPlayer(videoPath: video.path, thumbnail: thumbnailPath),
       );
 
-      state = state.copyWith(
-        lastPlayed: [...state.lastPlayed, newVideo].reversed.toList(),
-      );
+      state = state.copyWith(lastPlayed: [newVideo, ...state.lastPlayed]);
     }
   }
 

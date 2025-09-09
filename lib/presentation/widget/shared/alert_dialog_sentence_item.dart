@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:englishkey/domain/entities/sentences.dart';
 import 'package:englishkey/presentation/providers/senteces_provider.dart';
 import 'package:englishkey/presentation/widget/sentences/alert_dialog_sentence.dart';
@@ -5,7 +6,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AlertDialogSentenceItem extends ConsumerStatefulWidget {
-  const AlertDialogSentenceItem({super.key});
+  const AlertDialogSentenceItem({
+    super.key,
+    this.sentenceText,
+    this.selectedSentence,
+    this.idSentenceItem,
+    required this.isUpdate,
+  });
+
+  final String? sentenceText;
+  final String? selectedSentence;
+  final int? idSentenceItem;
+  final bool isUpdate;
 
   @override
   ConsumerState<AlertDialogSentenceItem> createState() =>
@@ -15,8 +27,23 @@ class AlertDialogSentenceItem extends ConsumerStatefulWidget {
 class _AlertDialogSentenceItemState
     extends ConsumerState<AlertDialogSentenceItem> {
   final _formKey = GlobalKey<FormState>();
-  final _sentenceController = TextEditingController();
+  late TextEditingController _sentenceController;
   Sentences? _selectedSentence;
+  int? _idSentenceItem;
+
+  @override
+  void initState() {
+    super.initState();
+    _sentenceController = TextEditingController(
+      text: widget.sentenceText ?? '',
+    );
+    _idSentenceItem = widget.idSentenceItem;
+    final categoriesSentences = ref.read(sentencesProvider).sentences;
+
+    _selectedSentence = categoriesSentences.firstWhereOrNull(
+      (value) => value.sentence == widget.selectedSentence,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,18 +51,20 @@ class _AlertDialogSentenceItemState
     return AlertDialog(
       title: Row(
         children: [
-          Text('Agregar Oración'),
+          Text(' ${widget.isUpdate ? 'Actualizar' : 'Agregar'} Oración'),
           Spacer(),
-          IconButton(
-            padding: EdgeInsets.all(0),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialogSentence(),
-              );
-            },
-            icon: Icon(Icons.add),
-          ),
+          widget.isUpdate
+              ? SizedBox()
+              : IconButton(
+                padding: EdgeInsets.all(0),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialogSentence(isUpdate: false),
+                  );
+                },
+                icon: Icon(Icons.add),
+              ),
         ],
       ),
       content: SizedBox(
@@ -106,11 +135,13 @@ class _AlertDialogSentenceItemState
                   .read(sentencesProvider.notifier)
                   .createOrUpdate(
                     Sentences(
+                      id: _idSentenceItem,
                       sentence: _sentenceController.text.trim(),
                       isItem: true,
                       idPadre: _selectedSentence!.id,
                     ),
                   );
+              if (widget.isUpdate) Navigator.of(context).pop();
               _sentenceController.text = "";
               setState(() {
                 _selectedSentence = null;
@@ -118,7 +149,7 @@ class _AlertDialogSentenceItemState
             }
           },
           child: Text(
-            'Agregar',
+            widget.isUpdate ? 'Actualizar' : 'Agregar',
             style: TextStyle(fontSize: textTheme.titleSmall!.fontSize),
           ),
         ),

@@ -15,7 +15,6 @@ class CustomDrawer extends ConsumerWidget {
       child: SafeArea(
         child: Column(
           children: [
-            // Contenido scrollable
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,

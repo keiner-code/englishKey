@@ -1,4 +1,5 @@
 import 'package:englishkey/presentation/providers/senteces_provider.dart';
+import 'package:englishkey/presentation/widget/shared/alert_dialog_sentence_item.dart';
 import 'package:englishkey/presentation/widget/shared/custom_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -135,6 +136,18 @@ class _SentencesScreenState extends ConsumerState<SentencesScreen> {
                         vertical: 2,
                       ),
                       trailing: const Icon(Icons.chevron_right),
+                      onTap:
+                          () => showDialog(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialogSentenceItem(
+                                isUpdate: true,
+                                selectedSentence: category,
+                                sentenceText: s.sentence,
+                                idSentenceItem: s.id,
+                              );
+                            },
+                          ),
                     );
                   }),
                 );

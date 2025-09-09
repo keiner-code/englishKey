@@ -28,7 +28,7 @@ class _UserScreenState extends ConsumerState<UserScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final userState = ref.read(userProvider).state;
-      if (userState.user != null) {
+      if (userState.user!.photo != null) {
         _nameController.text = userState.user!.firstName;
         _lastnameController.text = userState.user!.lastName;
         _fileImage = File(userState.user!.photo!);
@@ -97,10 +97,16 @@ class _UserScreenState extends ConsumerState<UserScreen> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(20),
                       child:
-                          (userState.user != null &&
-                                  userState.user!.photo != null)
+                          (userState.user!.photo != null)
                               ? Image.file(
                                 File(userState.user!.photo!),
+                                fit: BoxFit.contain,
+                                width: double.infinity,
+                                height: double.infinity,
+                              )
+                              : (_fileImage != null)
+                              ? Image.file(
+                                _fileImage!,
                                 fit: BoxFit.contain,
                                 width: double.infinity,
                                 height: double.infinity,

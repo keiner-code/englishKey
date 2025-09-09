@@ -334,7 +334,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                       ),
                     ),
                     Positioned(
-                      bottom: 60,
+                      bottom: 20,
                       left: 16,
                       right: 16,
                       child: Stack(

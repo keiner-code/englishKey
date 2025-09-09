@@ -108,7 +108,6 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
                   lessonState.lastPlayed.isNotEmpty
                       ? ListView.builder(
                         scrollDirection: Axis.horizontal,
-                        reverse: true,
                         itemCount: lessonState.lastPlayed.length,
                         itemBuilder: (context, index) {
                           final topVideo = lessonState.lastPlayed[index];

@@ -95,7 +95,7 @@ class SentenceNotifier extends StateNotifier<SentenceState> {
 
       final response = await repositoryImpl.createOrupdate(sentence: sentence);
 
-      if (response.isItem) return;
+      //if (response.isItem) return;
 
       if (wasNew == null) {
         state = state.copyWith(
@@ -117,6 +117,8 @@ class SentenceNotifier extends StateNotifier<SentenceState> {
               return item;
             }).toList(),
       );
+
+      await getAllSentencesItems(state.sentences);
     } catch (e) {
       state = state.copyWith(errorMessage: 'Error interno del servidor $e');
     }

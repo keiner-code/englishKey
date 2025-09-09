@@ -1,3 +1,4 @@
+import 'package:englishkey/config/permission/permission_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,7 +22,11 @@ class SelectedFileWidget extends ConsumerWidget {
             color: Theme.of(context).textTheme.titleSmall!.color,
           ),
         ),
-        onPressed: () => selectFolder(ref),
+        onPressed: () async {
+          final granted = await PermissionConfig.askVideoPermission();
+          if (!granted) return;
+          selectFolder(ref);
+        },
       ),
     );
   }
