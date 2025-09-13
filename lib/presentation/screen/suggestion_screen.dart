@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 import 'package:englishkey/domain/entities/suggestion.dart';
 import 'package:englishkey/presentation/widget/shared/custom_drawer.dart';
 import 'package:flutter/material.dart';
