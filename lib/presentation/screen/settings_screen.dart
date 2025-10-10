@@ -48,8 +48,8 @@ class SettingsScreen extends ConsumerWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
                     child:
-                        (userState.user != null &&
-                                userState.user!.photo != null)
+                        (userState.user!.photo != null &&
+                                userState.user!.photo!.isNotEmpty)
                             ? Image.file(
                               fit: BoxFit.fill,
                               File(userState.user!.photo!),

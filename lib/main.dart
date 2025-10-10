@@ -1,6 +1,8 @@
 import 'package:englishkey/config/theme/theme_config.dart';
 import 'package:englishkey/firebase_options.dart';
 import 'package:englishkey/presentation/providers/settings_provider.dart';
+
+import 'package:englishkey/presentation/widget/main/build_listener_widget.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:englishkey/config/router/router_config.dart';
@@ -23,10 +25,12 @@ class MainApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settingsNotifier = ref.watch(settingProvider);
     final isDarkMode = settingsNotifier.settings?.darkMode ?? false;
+
     return MaterialApp.router(
       routerConfig: appRouterConfig,
       theme: AppThemeData.getThemeData(isDarkMode),
       debugShowCheckedModeBanner: false,
+      builder: (context, child) => BuildListenerWidget(child: child),
     );
   }
 }

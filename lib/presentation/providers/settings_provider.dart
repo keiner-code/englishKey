@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:englishkey/domain/entities/settings.dart';
 import 'package:englishkey/infraestructure/repositories/settings_repository_impl.dart';
 import 'package:flutter/material.dart';
@@ -6,9 +8,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class SettingsNotifier extends ChangeNotifier {
   late SettingsRepositoryImpl repositoryImpl;
   Settings? settings;
+  String messageToInternet;
 
-  SettingsNotifier() {
+  SettingsNotifier({this.messageToInternet = ''}) {
     repositoryImpl = SettingsRepositoryImpl();
+  }
+
+  void toggleMessage(String message) {
+    messageToInternet = message;
+    notifyListeners();
   }
 
   Future<void> getAllSetting() async {

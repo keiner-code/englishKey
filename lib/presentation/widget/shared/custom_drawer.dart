@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:englishkey/presentation/providers/connection_provider.dart';
 import 'package:englishkey/presentation/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,7 @@ class CustomDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
     final userState = ref.watch(userProvider);
+    final connectionAsync = ref.watch(connectionProvider);
     return Drawer(
       child: SafeArea(
         child: Column(
@@ -38,11 +40,19 @@ class CustomDrawer extends ConsumerWidget {
                           children: [
                             userState.state.user!.photo == null
                                 ? Icon(Icons.person, size: 50)
+                                : userState.state.user!.photo!.isEmpty
+                                ? Icon(Icons.person, size: 50)
                                 : CircleAvatar(
                                   radius: 50,
-                                  backgroundImage: FileImage(
-                                    File(userState.state.user!.photo!),
-                                  ),
+                                  backgroundImage:
+                                      userState.state.user?.photo != null &&
+                                              File(
+                                                userState.state.user!.photo!,
+                                              ).existsSync()
+                                          ? FileImage(
+                                            File(userState.state.user!.photo!),
+                                          )
+                                          : null,
                                 ),
                             const SizedBox(height: 5),
                             Text(
@@ -88,18 +98,42 @@ class CustomDrawer extends ConsumerWidget {
                     title: const Text('Configuración'),
                     onTap: () => context.go('/settings'),
                   ),
-                  /* const Divider(),
-                  ListTile(
-                    leading: const Icon(
-                      Icons.logout_outlined,
-                      color: Colors.red,
-                    ),
-                    title: const Text(
-                      'Cerrar sesión',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                    onTap: () {},
-                  ), */
+                  const Divider(),
+                  connectionAsync.when(
+                    data: (hasInternet) {
+                      if (hasInternet) {
+                        final user = userState.state.user;
+
+                        return user!.email.isNotEmpty
+                            ? userState.state.isLoginInline
+                                ? ListTile(
+                                  leading: const Icon(
+                                    Icons.logout_outlined,
+                                    color: Colors.red,
+                                  ),
+                                  title: const Text(
+                                    'Cerrar sesión',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                  onTap: () {
+                                    ref.read(userProvider.notifier).logout();
+                                    context.go('/login');
+                                  },
+                                )
+                                : ListTile(
+                                  leading: const Icon(Icons.login),
+                                  title: const Text('Iniciar Session'),
+                                  onTap: () {
+                                    context.go('/login');
+                                  },
+                                )
+                            : SizedBox();
+                      }
+                      return SizedBox();
+                    },
+                    error: (error, stackTrace) => Text(error.toString()),
+                    loading: () => Center(child: CircularProgressIndicator()),
+                  ),
                 ],
               ),
             ),

@@ -20,6 +20,7 @@ class _UserScreenState extends ConsumerState<UserScreen> {
   final _nameController = TextEditingController();
   final _lastnameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -32,7 +33,8 @@ class _UserScreenState extends ConsumerState<UserScreen> {
         _nameController.text = userState.user!.firstName;
         _lastnameController.text = userState.user!.lastName;
         _fileImage = File(userState.user!.photo!);
-        _emailController.text = userState.user!.email!;
+        _emailController.text = userState.user!.email;
+        _passwordController.text = userState.user!.password;
         setState(() {});
       }
     });
@@ -54,7 +56,7 @@ class _UserScreenState extends ConsumerState<UserScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context).textTheme.titleMedium;
     final screen = MediaQuery.of(context).size;
-    final userState = ref.watch(userProvider).state;
+    final userState = ref.watch(userProvider).state.user;
 
     return Scaffold(
       body: SafeArea(
@@ -73,7 +75,33 @@ class _UserScreenState extends ConsumerState<UserScreen> {
                       icon: const Icon(Icons.arrow_back, size: 30),
                     ),
                     const SizedBox(width: 6),
-                    Text('Gestionar usuario', style: theme),
+                    Text(
+                      'Gestionar usuario',
+                      style: theme!.copyWith(fontSize: 22),
+                    ),
+                    Spacer(),
+                    userState!.email.isEmpty
+                        ? SizedBox()
+                        : TextButton.icon(
+                          label: Text(
+                            'Eliminar Usuario',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                          onPressed: () async {
+                            _emailController.clear();
+                            _lastnameController.clear();
+                            _nameController.clear();
+                            _passwordController.clear();
+                            await ref.read(userProvider.notifier).deleteUser();
+                            setState(() {
+                              _fileImage = File("");
+                            });
+                          },
+                          icon: Icon(
+                            Icons.delete_forever_outlined,
+                            color: Colors.red,
+                          ),
+                        ),
                   ],
                 ),
               ),
@@ -97,25 +125,24 @@ class _UserScreenState extends ConsumerState<UserScreen> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(20),
                       child:
-                          (userState.user!.photo != null)
-                              ? Image.file(
-                                File(userState.user!.photo!),
-                                fit: BoxFit.contain,
-                                width: double.infinity,
-                                height: double.infinity,
-                              )
-                              : (_fileImage != null)
+                          _fileImage != null && _fileImage!.path.isNotEmpty
                               ? Image.file(
                                 _fileImage!,
                                 fit: BoxFit.contain,
                                 width: double.infinity,
                                 height: double.infinity,
                               )
+                              : userState.photo != null &&
+                                  userState.photo!.isNotEmpty &&
+                                  File(userState.photo!).existsSync()
+                              ? Image.file(
+                                File(userState.photo!),
+                                fit: BoxFit.contain,
+                                width: double.infinity,
+                                height: double.infinity,
+                              )
                               : Center(
-                                child: Text(
-                                  'No hay usuario configurado',
-                                  style: theme,
-                                ),
+                                child: Text('Agregar una foto', style: theme),
                               ),
                     ),
                     Positioned(
@@ -144,6 +171,7 @@ class _UserScreenState extends ConsumerState<UserScreen> {
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _nameController,
+                      keyboardType: TextInputType.name,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                         hintText: 'Agrege el nombre',
@@ -158,6 +186,7 @@ class _UserScreenState extends ConsumerState<UserScreen> {
                     SizedBox(height: 20),
                     TextFormField(
                       controller: _lastnameController,
+                      keyboardType: TextInputType.name,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                         hintText: 'Agrege el apellido',
@@ -172,10 +201,12 @@ class _UserScreenState extends ConsumerState<UserScreen> {
                     SizedBox(height: 20),
                     TextFormField(
                       controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                         hintText: 'Agrege el correo',
                       ),
+                      enabled: !userState.itIsRegisterOnline,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Por favor agregue el correo';
@@ -184,18 +215,39 @@ class _UserScreenState extends ConsumerState<UserScreen> {
                       },
                     ),
                     SizedBox(height: 20),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      enabled: !userState.itIsRegisterOnline,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: 'Agrege la contraseña',
+                      ),
+                      validator: (value) {
+                        if (value == null ||
+                            value.isEmpty && userState.email.isEmpty) {
+                          return 'Por favor agregue la contraseña';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 20),
                     FilledButton(
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
-                          if (userState.user == null) {
+                          if (userState.email.isEmpty) {
                             ref
                                 .read(userProvider.notifier)
                                 .addUser(
                                   User(
                                     firstName: _nameController.text,
                                     lastName: _lastnameController.text,
-                                    photo: _fileImage!.path,
+                                    photo:
+                                        _fileImage == null
+                                            ? ''
+                                            : _fileImage!.path,
                                     email: _emailController.text,
+                                    password: _passwordController.text,
                                   ),
                                 );
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -211,6 +263,7 @@ class _UserScreenState extends ConsumerState<UserScreen> {
                                   lastName: _lastnameController.text,
                                   photo: _fileImage!.path,
                                   email: _emailController.text,
+                                  password: _passwordController.text,
                                 ),
                               );
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -223,7 +276,7 @@ class _UserScreenState extends ConsumerState<UserScreen> {
                         }
                       },
                       child: Text(
-                        userState.user == null
+                        userState.email.isEmpty
                             ? 'Agregar el usuario'
                             : 'Actualizar usuario',
                         style: TextStyle(color: Colors.white),

@@ -1,6 +1,7 @@
 import 'package:englishkey/presentation/screen/complete_sentences_screen.dart';
 import 'package:englishkey/presentation/screen/home_screen.dart';
 import 'package:englishkey/presentation/screen/lessons_screen.dart';
+import 'package:englishkey/presentation/screen/login_screen.dart';
 import 'package:englishkey/presentation/screen/sentences_screen.dart';
 import 'package:englishkey/presentation/screen/settings_screen.dart';
 import 'package:englishkey/presentation/screen/suggestion_screen.dart';
@@ -10,6 +11,19 @@ import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 
 final GoRouter appRouterConfig = GoRouter(
+  /* redirect: (context, state) {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    final isLoggerIn = currentUser != null;
+
+    if (!isLoggerIn) {
+      return '/login';
+    }
+    if (isLoggerIn) {
+      return '/';
+    }
+    return null;
+  }, */
   routes: <RouteBase>[
     GoRoute(path: '/', builder: (context, state) => HomeScreen()),
     GoRoute(path: '/lessons', builder: (context, state) => LessonsScreen()),
@@ -31,5 +45,6 @@ final GoRouter appRouterConfig = GoRouter(
       },
     ),
     GoRoute(path: '/sentences', builder: (context, state) => SentencesScreen()),
+    GoRoute(path: '/login', builder: (context, state) => LoginScreen()),
   ],
 );
