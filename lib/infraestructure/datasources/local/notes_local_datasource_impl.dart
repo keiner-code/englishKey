@@ -1,12 +1,12 @@
-import 'package:englishkey/domain/datasources/notes_datasource.dart';
+import 'package:englishkey/domain/datasources/local/notes_local_datasource.dart';
 import 'package:englishkey/domain/entities/notes.dart';
 import 'package:englishkey/infraestructure/db/isar_database.dart';
 import 'package:isar/isar.dart';
 
-class NotesDatasourceImpl extends NotesDatasource {
+class NotesLocalDatasourceImpl extends NotesLocalDatasource {
   late Future<Isar> dbIsar;
 
-  NotesDatasourceImpl() {
+  NotesLocalDatasourceImpl() {
     dbIsar = IsarDatabase.openDB();
   }
 

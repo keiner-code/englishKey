@@ -9,6 +9,8 @@ class Note {
   String content;
   String priority;
   String? date;
+  bool? isAsync;
+  DateTime? isUpdate;
 
   Note({
     this.id,
@@ -16,5 +18,7 @@ class Note {
     required this.content,
     required this.priority,
     this.date,
+    this.isAsync,
+    this.isUpdate,
   });
 }

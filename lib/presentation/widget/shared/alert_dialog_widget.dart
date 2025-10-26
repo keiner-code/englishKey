@@ -14,6 +14,7 @@ class AlertDialogWidget extends StatefulWidget {
     this.idNote,
     required this.message,
     required this.isSave,
+    required this.isAsync,
   });
   final Function({required Note note}) noteCallback;
   final String titleDialog;
@@ -22,6 +23,8 @@ class AlertDialogWidget extends StatefulWidget {
   final String? contentForm;
   final bool isSave;
   final Id? idNote;
+  final bool isAsync;
+  //final String? date;
   @override
   State<AlertDialogWidget> createState() => _AlertDialogWidgetState();
 }
@@ -126,6 +129,8 @@ class _AlertDialogWidgetState extends State<AlertDialogWidget> {
                       content: contentController.text,
                       priority: Priority.baja.name,
                       id: widget.idNote,
+                      isAsync: widget.isAsync,
+                      isUpdate: widget.isSave ? null : DateTime.now(),
                     ),
                   );
                 }

@@ -1,11 +1,11 @@
-import 'package:englishkey/domain/datasources/notes_datasource.dart';
+import 'package:englishkey/domain/datasources/local/notes_local_datasource.dart';
 import 'package:englishkey/domain/entities/notes.dart';
-import 'package:englishkey/domain/repositories/notes_respository.dart';
+import 'package:englishkey/domain/repositories/local/notes_local_respository.dart';
 
-class NotesRepositoryImpl extends NotesRespository {
-  final NotesDatasource datasource;
+class NotesLocalRepositoryImpl extends NotesLocalRespository {
+  final NotesLocalDatasource datasource;
 
-  NotesRepositoryImpl({required this.datasource});
+  NotesLocalRepositoryImpl({required this.datasource});
 
   @override
   Future<List<Note>> listNotes() {

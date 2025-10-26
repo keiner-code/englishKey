@@ -84,6 +84,7 @@ class TextCardWidget extends ConsumerWidget {
                             },
                             titleForm: note.title,
                             contentForm: note.content,
+                            isAsync: note.isAsync!,
                             idNote: note.id,
                           );
                         },

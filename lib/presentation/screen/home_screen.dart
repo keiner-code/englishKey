@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:englishkey/core/constants/card_colors.dart';
 import 'package:englishkey/domain/entities/notes.dart';
 import 'package:englishkey/presentation/providers/notes_provider.dart';
 import 'package:englishkey/presentation/widget/home/image_card_widget.dart';
@@ -12,15 +13,10 @@ import 'package:englishkey/presentation/widget/shared/alert_dialog_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
-const List<Color> cardColors = [
-  Color.fromARGB(130, 131, 187, 103),
-  Color.fromARGB(130, 103, 131, 187),
-  Color.fromARGB(130, 187, 103, 131),
-  Color.fromARGB(130, 187, 131, 103),
-];
-
 class HomeScreen extends ConsumerWidget {
-  const HomeScreen({super.key});
+  HomeScreen({super.key});
+
+  final cardColors = CardColors.getColors();
 
   void chargeFile(WidgetRef ref, FileType type) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -48,6 +44,18 @@ class HomeScreen extends ConsumerWidget {
     final textTheme = Theme.of(context).textTheme.titleSmall;
     final noteState = ref.watch(notesProvider);
 
+    /* 
+    final userAsyncStatus = ref.watch(userAuthStreamProvider);
+    userAsyncStatus.when(
+      data: (user) {
+        if (user == null) return;
+
+        return null;
+      },
+      error: (error, stackTrace) => const SizedBox.shrink(),
+      loading: () => const SizedBox.shrink(),
+    ); */
+
     if (noteState.errorMessage != null && noteState.errorMessage!.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -73,6 +81,7 @@ class HomeScreen extends ConsumerWidget {
                     (context) => AlertDialogWidget(
                       titleDialog: 'Agregar nota',
                       isSave: true,
+                      isAsync: false,
                       message: 'Nota agregada con exito',
                       noteCallback: ({required note}) {
                         ref.read(notesProvider.notifier).addOrUpdateNote(note);

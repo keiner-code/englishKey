@@ -1,3 +1,4 @@
+import 'package:englishkey/infraestructure/services/sincronization/note_service_sincronization.dart';
 import 'package:englishkey/presentation/providers/connection_provider.dart';
 import 'package:englishkey/presentation/providers/settings_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -29,7 +30,7 @@ class BuildListenerWidget extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         spacing: 10,
         children: [
-          message.contains('Intentando')
+          message.contains('Intentando') || message.contains('Sincronizando')
               ? SizedBox(
                 width: 17,
                 height: 17,
@@ -47,6 +48,10 @@ class BuildListenerWidget extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> asyncData(WidgetRef ref) async {
+    await NoteServiceSincronization().asyncNotes(ref);
   }
 
   @override
@@ -74,7 +79,7 @@ class BuildListenerWidget extends ConsumerWidget {
             await buildShowMessageState(
               hasInternet
                   ? "¡Estás conectado a Internet! 🎉"
-                  : "Oops, parece que no tienes conexión a internet. 😢",
+                  : "Oops, no tienes conexión a internet. 😢",
               ref,
             );
 
@@ -84,13 +89,16 @@ class BuildListenerWidget extends ConsumerWidget {
 
               //? Validar si el usuario tiene una session activa
               if (currentUser != null) {
-                ref.read(userProvider.notifier).isLoginToggleInline();
+                ref.read(userProvider.notifier).isLoginToggleInline(true);
                 await buildShowMessageState("La session esta activa 👌", ref);
+                //? Sincronization
+                await asyncData(ref);
+                await buildShowMessageState("Sincronizando los datos", ref);
                 return;
               }
 
               await buildShowMessageState(
-                "Oops, Pero no ha iniciado session en linea",
+                "Oops, no has iniciado session en linea",
                 ref,
               );
 
@@ -102,6 +110,9 @@ class BuildListenerWidget extends ConsumerWidget {
 
               if (localUser.state.errorMessage.isEmpty) {
                 await buildShowMessageState('Session iniciada 👍', ref);
+                //? Sincronization
+                await buildShowMessageState("Sincronizando los datos", ref);
+                await asyncData(ref);
                 return;
               }
 
@@ -126,9 +137,12 @@ class BuildListenerWidget extends ConsumerWidget {
               //? Validar el estado de registrado
               if (localUser.state.errorMessage.isEmpty) {
                 await buildShowMessageState(
-                  'Usuario registrado en la nube',
+                  'Usuario registrado en la nube 😊',
                   ref,
                 );
+                //? Sincronization
+                await buildShowMessageState("Sincronizando los datos", ref);
+                await asyncData(ref);
                 return;
               }
               await buildShowMessageState(localUser.state.errorMessage, ref);

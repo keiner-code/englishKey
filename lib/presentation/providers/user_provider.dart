@@ -48,8 +48,8 @@ class UserNotifier extends ChangeNotifier {
     _cloudRepositoryImpl = UserCloudRepositoryImpl();
   }
 
-  void isLoginToggleInline() {
-    _state = _state.copyWith(isLoginInline: !_state.isLoginInline);
+  void isLoginToggleInline(bool isLogin) {
+    _state = _state.copyWith(isLoginInline: isLogin);
     notifyListeners();
   }
 

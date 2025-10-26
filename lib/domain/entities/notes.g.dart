@@ -27,13 +27,23 @@ const NoteSchema = CollectionSchema(
       name: r'date',
       type: IsarType.string,
     ),
-    r'priority': PropertySchema(
+    r'isAsync': PropertySchema(
       id: 2,
+      name: r'isAsync',
+      type: IsarType.bool,
+    ),
+    r'isUpdate': PropertySchema(
+      id: 3,
+      name: r'isUpdate',
+      type: IsarType.dateTime,
+    ),
+    r'priority': PropertySchema(
+      id: 4,
       name: r'priority',
       type: IsarType.string,
     ),
     r'title': PropertySchema(
-      id: 3,
+      id: 5,
       name: r'title',
       type: IsarType.string,
     )
@@ -78,8 +88,10 @@ void _noteSerialize(
 ) {
   writer.writeString(offsets[0], object.content);
   writer.writeString(offsets[1], object.date);
-  writer.writeString(offsets[2], object.priority);
-  writer.writeString(offsets[3], object.title);
+  writer.writeBool(offsets[2], object.isAsync);
+  writer.writeDateTime(offsets[3], object.isUpdate);
+  writer.writeString(offsets[4], object.priority);
+  writer.writeString(offsets[5], object.title);
 }
 
 Note _noteDeserialize(
@@ -92,8 +104,10 @@ Note _noteDeserialize(
     content: reader.readString(offsets[0]),
     date: reader.readStringOrNull(offsets[1]),
     id: id,
-    priority: reader.readString(offsets[2]),
-    title: reader.readString(offsets[3]),
+    isAsync: reader.readBoolOrNull(offsets[2]),
+    isUpdate: reader.readDateTimeOrNull(offsets[3]),
+    priority: reader.readString(offsets[4]),
+    title: reader.readString(offsets[5]),
   );
   return object;
 }
@@ -110,8 +124,12 @@ P _noteDeserializeProp<P>(
     case 1:
       return (reader.readStringOrNull(offset)) as P;
     case 2:
-      return (reader.readString(offset)) as P;
+      return (reader.readBoolOrNull(offset)) as P;
     case 3:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 4:
+      return (reader.readString(offset)) as P;
+    case 5:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -546,6 +564,100 @@ extension NoteQueryFilter on QueryBuilder<Note, Note, QFilterCondition> {
     });
   }
 
+  QueryBuilder<Note, Note, QAfterFilterCondition> isAsyncIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'isAsync',
+      ));
+    });
+  }
+
+  QueryBuilder<Note, Note, QAfterFilterCondition> isAsyncIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'isAsync',
+      ));
+    });
+  }
+
+  QueryBuilder<Note, Note, QAfterFilterCondition> isAsyncEqualTo(bool? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isAsync',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Note, Note, QAfterFilterCondition> isUpdateIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'isUpdate',
+      ));
+    });
+  }
+
+  QueryBuilder<Note, Note, QAfterFilterCondition> isUpdateIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'isUpdate',
+      ));
+    });
+  }
+
+  QueryBuilder<Note, Note, QAfterFilterCondition> isUpdateEqualTo(
+      DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isUpdate',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Note, Note, QAfterFilterCondition> isUpdateGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'isUpdate',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Note, Note, QAfterFilterCondition> isUpdateLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'isUpdate',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Note, Note, QAfterFilterCondition> isUpdateBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'isUpdate',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<Note, Note, QAfterFilterCondition> priorityEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -833,6 +945,30 @@ extension NoteQuerySortBy on QueryBuilder<Note, Note, QSortBy> {
     });
   }
 
+  QueryBuilder<Note, Note, QAfterSortBy> sortByIsAsync() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isAsync', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Note, Note, QAfterSortBy> sortByIsAsyncDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isAsync', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Note, Note, QAfterSortBy> sortByIsUpdate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isUpdate', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Note, Note, QAfterSortBy> sortByIsUpdateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isUpdate', Sort.desc);
+    });
+  }
+
   QueryBuilder<Note, Note, QAfterSortBy> sortByPriority() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'priority', Sort.asc);
@@ -895,6 +1031,30 @@ extension NoteQuerySortThenBy on QueryBuilder<Note, Note, QSortThenBy> {
     });
   }
 
+  QueryBuilder<Note, Note, QAfterSortBy> thenByIsAsync() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isAsync', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Note, Note, QAfterSortBy> thenByIsAsyncDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isAsync', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Note, Note, QAfterSortBy> thenByIsUpdate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isUpdate', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Note, Note, QAfterSortBy> thenByIsUpdateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isUpdate', Sort.desc);
+    });
+  }
+
   QueryBuilder<Note, Note, QAfterSortBy> thenByPriority() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'priority', Sort.asc);
@@ -935,6 +1095,18 @@ extension NoteQueryWhereDistinct on QueryBuilder<Note, Note, QDistinct> {
     });
   }
 
+  QueryBuilder<Note, Note, QDistinct> distinctByIsAsync() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isAsync');
+    });
+  }
+
+  QueryBuilder<Note, Note, QDistinct> distinctByIsUpdate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isUpdate');
+    });
+  }
+
   QueryBuilder<Note, Note, QDistinct> distinctByPriority(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -966,6 +1138,18 @@ extension NoteQueryProperty on QueryBuilder<Note, Note, QQueryProperty> {
   QueryBuilder<Note, String?, QQueryOperations> dateProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'date');
+    });
+  }
+
+  QueryBuilder<Note, bool?, QQueryOperations> isAsyncProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isAsync');
+    });
+  }
+
+  QueryBuilder<Note, DateTime?, QQueryOperations> isUpdateProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isUpdate');
     });
   }
 
