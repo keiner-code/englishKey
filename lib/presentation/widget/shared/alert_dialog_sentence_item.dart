@@ -60,7 +60,11 @@ class _AlertDialogSentenceItemState
                 onPressed: () {
                   showDialog(
                     context: context,
-                    builder: (context) => AlertDialogSentence(isUpdate: false),
+                    builder:
+                        (context) => AlertDialogSentence(
+                          isUpdate: false,
+                          isAsync: false,
+                        ),
                   );
                 },
                 icon: Icon(Icons.add),
@@ -139,6 +143,8 @@ class _AlertDialogSentenceItemState
                       sentence: _sentenceController.text.trim(),
                       isItem: true,
                       idPadre: _selectedSentence!.id,
+                      isAsync: false,
+                      isUpdate: DateTime.now(),
                     ),
                   );
               if (widget.isUpdate) Navigator.of(context).pop();

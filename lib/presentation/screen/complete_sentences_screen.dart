@@ -378,6 +378,8 @@ class _CompleteSentencesScreenState
                             isSelected: !item.isSelected,
                             available: true,
                             iconString: item.iconString,
+                            isAsync: item.isAsync,
+                            isUpdate: DateTime.now(),
                           ),
                         );
                         sentenceMethods.loadItemsFromMainSentence(
@@ -394,6 +396,7 @@ class _CompleteSentencesScreenState
                                   id: item.id,
                                   selectedIcon: item.iconString,
                                   textInput: item.sentence,
+                                  isAsync: item.isAsync,
                                 ),
                           ),
                     );

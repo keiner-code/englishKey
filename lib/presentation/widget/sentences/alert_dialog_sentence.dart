@@ -11,12 +11,14 @@ class AlertDialogSentence extends ConsumerStatefulWidget {
     this.textInput,
     this.id,
     required this.isUpdate,
+    required this.isAsync,
   });
 
   final String? textInput;
   final String? selectedIcon;
   final int? id;
   final bool isUpdate;
+  final bool isAsync;
 
   @override
   ConsumerState<AlertDialogSentence> createState() =>
@@ -156,6 +158,8 @@ class _AlertDialogSentenceState extends ConsumerState<AlertDialogSentence> {
                     sentence: text,
                     isItem: false,
                     iconString: iconString,
+                    isAsync: widget.isUpdate ? widget.isAsync : false,
+                    isUpdate: DateTime.now(),
                   ),
                 );
             sentenceController.text = '';

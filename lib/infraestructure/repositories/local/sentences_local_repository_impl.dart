@@ -1,11 +1,11 @@
-import 'package:englishkey/domain/datasources/sentence_datasource.dart';
+import 'package:englishkey/domain/datasources/local/sentence_local_datasource.dart';
 import 'package:englishkey/domain/entities/sentences.dart';
-import 'package:englishkey/domain/repositories/sentences_repository.dart';
+import 'package:englishkey/domain/repositories/local/sentences_local_repository.dart';
 
-class SentencesRepositoryImpl extends SentencesRepository {
-  final SentenceDatasource datasource;
+class SentencesLocalRepositoryImpl extends SentencesLocalRepository {
+  final SentenceLocalDatasource datasource;
 
-  SentencesRepositoryImpl({required this.datasource});
+  SentencesLocalRepositoryImpl({required this.datasource});
   @override
   Future<Sentences> createOrupdate({required Sentences sentence}) {
     return datasource.createOrupdate(sentence: sentence);
@@ -24,5 +24,10 @@ class SentencesRepositoryImpl extends SentencesRepository {
   @override
   Future<List<Sentences>> getAllItems({required int idSentence}) {
     return datasource.getAllItems(idSentence: idSentence);
+  }
+
+  @override
+  Future<List<Sentences>> getFindAll() {
+    return datasource.getFindAll();
   }
 }

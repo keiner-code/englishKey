@@ -1,12 +1,12 @@
-import 'package:englishkey/domain/datasources/sentence_datasource.dart';
+import 'package:englishkey/domain/datasources/local/sentence_local_datasource.dart';
 import 'package:englishkey/domain/entities/sentences.dart';
 import 'package:englishkey/infraestructure/db/isar_database.dart';
 import 'package:isar/isar.dart';
 
-class SentencesDatasourceImpl extends SentenceDatasource {
+class SentencesLocalDatasourceImpl extends SentenceLocalDatasource {
   late Future<Isar> dbIsar;
 
-  SentencesDatasourceImpl() {
+  SentencesLocalDatasourceImpl() {
     dbIsar = IsarDatabase.openDB();
   }
   @override
@@ -51,6 +51,16 @@ class SentencesDatasourceImpl extends SentenceDatasource {
     try {
       final db = await dbIsar;
       return await db.sentences.filter().idPadreEqualTo(idSentence).findAll();
+    } catch (e) {
+      throw Exception('$e');
+    }
+  }
+
+  @override
+  Future<List<Sentences>> getFindAll() async {
+    try {
+      final db = await dbIsar;
+      return await db.sentences.where().findAll();
     } catch (e) {
       throw Exception('$e');
     }

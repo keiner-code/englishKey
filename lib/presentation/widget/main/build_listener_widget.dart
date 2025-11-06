@@ -1,4 +1,5 @@
 import 'package:englishkey/infraestructure/services/sincronization/note_service_sincronization.dart';
+import 'package:englishkey/infraestructure/services/sincronization/sentence_service_sincronization.dart';
 import 'package:englishkey/presentation/providers/connection_provider.dart';
 import 'package:englishkey/presentation/providers/settings_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -50,8 +51,12 @@ class BuildListenerWidget extends ConsumerWidget {
     );
   }
 
-  Future<void> asyncData(WidgetRef ref) async {
+  Future<void> asyncNotesData(WidgetRef ref) async {
     await NoteServiceSincronization().asyncNotes(ref);
+  }
+
+  Future<void> asyncSentencesData(WidgetRef ref) async {
+    await SentenceServiceSincronization().asyncSentence(ref);
   }
 
   @override
@@ -92,8 +97,9 @@ class BuildListenerWidget extends ConsumerWidget {
                 ref.read(userProvider.notifier).isLoginToggleInline(true);
                 await buildShowMessageState("La session esta activa 👌", ref);
                 //? Sincronization
-                await asyncData(ref);
                 await buildShowMessageState("Sincronizando los datos", ref);
+                await asyncNotesData(ref);
+                await asyncSentencesData(ref);
                 return;
               }
 
@@ -112,7 +118,8 @@ class BuildListenerWidget extends ConsumerWidget {
                 await buildShowMessageState('Session iniciada 👍', ref);
                 //? Sincronization
                 await buildShowMessageState("Sincronizando los datos", ref);
-                await asyncData(ref);
+                await asyncNotesData(ref);
+                await asyncSentencesData(ref);
                 return;
               }
 
@@ -142,7 +149,8 @@ class BuildListenerWidget extends ConsumerWidget {
                 );
                 //? Sincronization
                 await buildShowMessageState("Sincronizando los datos", ref);
-                await asyncData(ref);
+                await asyncNotesData(ref);
+                await asyncSentencesData(ref);
                 return;
               }
               await buildShowMessageState(localUser.state.errorMessage, ref);

@@ -32,18 +32,28 @@ const SentencesSchema = CollectionSchema(
       name: r'idPadre',
       type: IsarType.long,
     ),
-    r'isItem': PropertySchema(
+    r'isAsync': PropertySchema(
       id: 3,
+      name: r'isAsync',
+      type: IsarType.bool,
+    ),
+    r'isItem': PropertySchema(
+      id: 4,
       name: r'isItem',
       type: IsarType.bool,
     ),
     r'isSelected': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'isSelected',
       type: IsarType.bool,
     ),
+    r'isUpdate': PropertySchema(
+      id: 6,
+      name: r'isUpdate',
+      type: IsarType.dateTime,
+    ),
     r'sentence': PropertySchema(
-      id: 5,
+      id: 7,
       name: r'sentence',
       type: IsarType.string,
     )
@@ -87,9 +97,11 @@ void _sentencesSerialize(
   writer.writeBool(offsets[0], object.available);
   writer.writeString(offsets[1], object.iconString);
   writer.writeLong(offsets[2], object.idPadre);
-  writer.writeBool(offsets[3], object.isItem);
-  writer.writeBool(offsets[4], object.isSelected);
-  writer.writeString(offsets[5], object.sentence);
+  writer.writeBool(offsets[3], object.isAsync);
+  writer.writeBool(offsets[4], object.isItem);
+  writer.writeBool(offsets[5], object.isSelected);
+  writer.writeDateTime(offsets[6], object.isUpdate);
+  writer.writeString(offsets[7], object.sentence);
 }
 
 Sentences _sentencesDeserialize(
@@ -103,9 +115,11 @@ Sentences _sentencesDeserialize(
     iconString: reader.readStringOrNull(offsets[1]),
     id: id,
     idPadre: reader.readLongOrNull(offsets[2]),
-    isItem: reader.readBool(offsets[3]),
-    isSelected: reader.readBoolOrNull(offsets[4]) ?? false,
-    sentence: reader.readString(offsets[5]),
+    isAsync: reader.readBool(offsets[3]),
+    isItem: reader.readBool(offsets[4]),
+    isSelected: reader.readBoolOrNull(offsets[5]) ?? false,
+    isUpdate: reader.readDateTimeOrNull(offsets[6]),
+    sentence: reader.readString(offsets[7]),
   );
   return object;
 }
@@ -126,8 +140,12 @@ P _sentencesDeserializeProp<P>(
     case 3:
       return (reader.readBool(offset)) as P;
     case 4:
-      return (reader.readBoolOrNull(offset) ?? false) as P;
+      return (reader.readBool(offset)) as P;
     case 5:
+      return (reader.readBoolOrNull(offset) ?? false) as P;
+    case 6:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 7:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -524,6 +542,16 @@ extension SentencesQueryFilter
     });
   }
 
+  QueryBuilder<Sentences, Sentences, QAfterFilterCondition> isAsyncEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isAsync',
+        value: value,
+      ));
+    });
+  }
+
   QueryBuilder<Sentences, Sentences, QAfterFilterCondition> isItemEqualTo(
       bool value) {
     return QueryBuilder.apply(this, (query) {
@@ -540,6 +568,76 @@ extension SentencesQueryFilter
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'isSelected',
         value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Sentences, Sentences, QAfterFilterCondition> isUpdateIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'isUpdate',
+      ));
+    });
+  }
+
+  QueryBuilder<Sentences, Sentences, QAfterFilterCondition>
+      isUpdateIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'isUpdate',
+      ));
+    });
+  }
+
+  QueryBuilder<Sentences, Sentences, QAfterFilterCondition> isUpdateEqualTo(
+      DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isUpdate',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Sentences, Sentences, QAfterFilterCondition> isUpdateGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'isUpdate',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Sentences, Sentences, QAfterFilterCondition> isUpdateLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'isUpdate',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Sentences, Sentences, QAfterFilterCondition> isUpdateBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'isUpdate',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
       ));
     });
   }
@@ -719,6 +817,18 @@ extension SentencesQuerySortBy on QueryBuilder<Sentences, Sentences, QSortBy> {
     });
   }
 
+  QueryBuilder<Sentences, Sentences, QAfterSortBy> sortByIsAsync() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isAsync', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Sentences, Sentences, QAfterSortBy> sortByIsAsyncDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isAsync', Sort.desc);
+    });
+  }
+
   QueryBuilder<Sentences, Sentences, QAfterSortBy> sortByIsItem() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isItem', Sort.asc);
@@ -740,6 +850,18 @@ extension SentencesQuerySortBy on QueryBuilder<Sentences, Sentences, QSortBy> {
   QueryBuilder<Sentences, Sentences, QAfterSortBy> sortByIsSelectedDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isSelected', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Sentences, Sentences, QAfterSortBy> sortByIsUpdate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isUpdate', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Sentences, Sentences, QAfterSortBy> sortByIsUpdateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isUpdate', Sort.desc);
     });
   }
 
@@ -806,6 +928,18 @@ extension SentencesQuerySortThenBy
     });
   }
 
+  QueryBuilder<Sentences, Sentences, QAfterSortBy> thenByIsAsync() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isAsync', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Sentences, Sentences, QAfterSortBy> thenByIsAsyncDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isAsync', Sort.desc);
+    });
+  }
+
   QueryBuilder<Sentences, Sentences, QAfterSortBy> thenByIsItem() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isItem', Sort.asc);
@@ -827,6 +961,18 @@ extension SentencesQuerySortThenBy
   QueryBuilder<Sentences, Sentences, QAfterSortBy> thenByIsSelectedDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isSelected', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Sentences, Sentences, QAfterSortBy> thenByIsUpdate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isUpdate', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Sentences, Sentences, QAfterSortBy> thenByIsUpdateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isUpdate', Sort.desc);
     });
   }
 
@@ -864,6 +1010,12 @@ extension SentencesQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Sentences, Sentences, QDistinct> distinctByIsAsync() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isAsync');
+    });
+  }
+
   QueryBuilder<Sentences, Sentences, QDistinct> distinctByIsItem() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isItem');
@@ -873,6 +1025,12 @@ extension SentencesQueryWhereDistinct
   QueryBuilder<Sentences, Sentences, QDistinct> distinctByIsSelected() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isSelected');
+    });
+  }
+
+  QueryBuilder<Sentences, Sentences, QDistinct> distinctByIsUpdate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isUpdate');
     });
   }
 
@@ -910,6 +1068,12 @@ extension SentencesQueryProperty
     });
   }
 
+  QueryBuilder<Sentences, bool, QQueryOperations> isAsyncProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isAsync');
+    });
+  }
+
   QueryBuilder<Sentences, bool, QQueryOperations> isItemProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isItem');
@@ -919,6 +1083,12 @@ extension SentencesQueryProperty
   QueryBuilder<Sentences, bool, QQueryOperations> isSelectedProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isSelected');
+    });
+  }
+
+  QueryBuilder<Sentences, DateTime?, QQueryOperations> isUpdateProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isUpdate');
     });
   }
 

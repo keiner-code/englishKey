@@ -1,6 +1,10 @@
 import 'package:englishkey/domain/entities/sentences.dart';
-import 'package:englishkey/infraestructure/datasources/sentences_datasource_impl.dart';
-import 'package:englishkey/infraestructure/repositories/sentences_repository_impl.dart';
+import 'package:englishkey/infraestructure/datasources/cloud/sentences_cloud_datasource_impl.dart';
+import 'package:englishkey/infraestructure/datasources/local/sentences_local_datasource_impl.dart';
+import 'package:englishkey/infraestructure/repositories/cloud/sentences_cloud_repository_impl.dart';
+import 'package:englishkey/infraestructure/repositories/local/sentences_local_repository_impl.dart';
+import 'package:englishkey/presentation/providers/connection_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -49,20 +53,25 @@ class SentenceState {
 }
 
 class SentenceNotifier extends StateNotifier<SentenceState> {
-  final SentencesRepositoryImpl repositoryImpl;
-  SentenceNotifier({required this.repositoryImpl})
-    : super(
-        SentenceState(
-          sentences: [],
-          items: [],
-          errorMessage: '',
-          status: SentenceStatus.initial,
-          failures: 0,
-          successes: 0,
-          countFailures: 0,
-          mapSentenceList: [],
-        ),
-      );
+  final SentencesLocalRepositoryImpl repositoryLocalImpl;
+  final SentencesCloudRepositoryImpl repositoryCloudImpl;
+  final Ref ref;
+  SentenceNotifier({
+    required this.repositoryLocalImpl,
+    required this.repositoryCloudImpl,
+    required this.ref,
+  }) : super(
+         SentenceState(
+           sentences: [],
+           items: [],
+           errorMessage: '',
+           status: SentenceStatus.initial,
+           failures: 0,
+           successes: 0,
+           countFailures: 0,
+           mapSentenceList: [],
+         ),
+       );
 
   void addSuccesses() async {
     final prefs = await SharedPreferences.getInstance();
@@ -87,25 +96,38 @@ class SentenceNotifier extends StateNotifier<SentenceState> {
     );
   }
 
-  createOrUpdate(Sentences sentence) async {
+  Future<void> createOrUpdate(Sentences sentence) async {
     state = state.copyWith(errorMessage: '', status: SentenceStatus.loading);
 
     try {
-      final wasNew = sentence.id;
+      final wasNew = sentence.id == null;
 
-      final response = await repositoryImpl.createOrupdate(sentence: sentence);
+      final hasInternet = ref
+          .read(connectionProvider)
+          .maybeWhen(data: (has) => has, orElse: () => false);
 
-      //if (response.isItem) return;
+      final user = hasInternet ? FirebaseAuth.instance.currentUser : null;
 
-      if (wasNew == null) {
+      final response = await repositoryLocalImpl.createOrupdate(
+        sentence: sentence,
+      );
+      //Create
+      if (wasNew) {
         state = state.copyWith(
           errorMessage: '',
           status: SentenceStatus.success,
           sentences: [...state.sentences, response],
         );
+
+        if (user != null) {
+          response.isAsync = true;
+          await repositoryCloudImpl.create(sentence: response);
+          await repositoryLocalImpl.createOrupdate(sentence: response);
+        }
         return;
       }
 
+      //Update
       state = state.copyWith(
         errorMessage: '',
         status: SentenceStatus.success,
@@ -118,17 +140,28 @@ class SentenceNotifier extends StateNotifier<SentenceState> {
             }).toList(),
       );
 
+      if (user != null) {
+        final response = await repositoryCloudImpl.update(sentence: sentence);
+        if (response != null) {
+          state = state.copyWith(errorMessage: response);
+        }
+      }
+
       await getAllSentencesItems(state.sentences);
     } catch (e) {
       state = state.copyWith(errorMessage: 'Error interno del servidor $e');
     }
   }
 
+  Future<List<Sentences>> localFindAll() async {
+    return await repositoryLocalImpl.getFindAll();
+  }
+
   Future<void> loadItemsFromMainSentence(int id, bool isSelected) async {
     state = state.copyWith(errorMessage: '', status: SentenceStatus.loading);
     try {
       if (isSelected) {
-        final response = await repositoryImpl.getAllItems(idSentence: id);
+        final response = await repositoryLocalImpl.getAllItems(idSentence: id);
         state = state.copyWith(
           errorMessage: '',
           status: SentenceStatus.success,
@@ -143,11 +176,11 @@ class SentenceNotifier extends StateNotifier<SentenceState> {
     }
   }
 
-  getAllSentences() async {
+  Future<void> getAllSentences() async {
     final prefs = await SharedPreferences.getInstance();
     state = state.copyWith(errorMessage: '', status: SentenceStatus.loading);
     try {
-      final response = await repositoryImpl.getAll(isItem: false);
+      final response = await repositoryLocalImpl.getAll(isItem: false);
       state = state.copyWith(
         errorMessage: '',
         status: SentenceStatus.success,
@@ -175,12 +208,12 @@ class SentenceNotifier extends StateNotifier<SentenceState> {
     }
   }
 
-  getAllSentencesItems(List<Sentences> senteces) async {
+  Future<void> getAllSentencesItems(List<Sentences> senteces) async {
     state = state.copyWith(errorMessage: '', status: SentenceStatus.loading);
     final List<Map<String, List<Sentences>>> sentenceListMap = [];
     try {
       for (var sentence in senteces) {
-        final response = await repositoryImpl.getAllItems(
+        final response = await repositoryLocalImpl.getAllItems(
           idSentence: sentence.id!,
         );
         sentenceListMap.add({sentence.sentence: response});
@@ -205,8 +238,12 @@ class SentenceNotifier extends StateNotifier<SentenceState> {
 final sentencesProvider =
     StateNotifierProvider<SentenceNotifier, SentenceState>((ref) {
       return SentenceNotifier(
-        repositoryImpl: SentencesRepositoryImpl(
-          datasource: SentencesDatasourceImpl(),
+        ref: ref,
+        repositoryLocalImpl: SentencesLocalRepositoryImpl(
+          datasource: SentencesLocalDatasourceImpl(),
+        ),
+        repositoryCloudImpl: SentencesCloudRepositoryImpl(
+          datasource: SentencesCloudDatasourceImpl(),
         ),
       )..getAllSentences();
     });
